@@ -55,6 +55,7 @@ namespace RobotLocalization
     transform_good_(false),
     use_manual_datum_(false),
     use_odometry_yaw_(false),
+    use_navsat_heading_yaw_(false),
     use_local_cartesian_(false),
     force_user_utm_(false),
     zero_altitude_(false),
@@ -87,6 +88,7 @@ namespace RobotLocalization
     nh_priv.param("zero_altitude", zero_altitude_, false);
     nh_priv.param("publish_filtered_gps", publish_gps_, false);
     nh_priv.param("use_odometry_yaw", use_odometry_yaw_, false);
+    nh_priv.param("use_navsat_heading_yaw", use_navsat_heading_yaw_, false);
     nh_priv.param("wait_for_datum", use_manual_datum_, false);
     nh_priv.param("use_local_cartesian", use_local_cartesian_, false);
     nh_priv.param("frequency", frequency, 10.0);
@@ -177,9 +179,13 @@ namespace RobotLocalization
     odom_sub_ = nh.subscribe("odometry/filtered", 1, &NavSatTransform::odomCallback, this);
     gps_sub_  = nh.subscribe("gps/fix", 1, &NavSatTransform::gpsFixCallback, this);
 
-    if (!use_odometry_yaw_ && !use_manual_datum_)
+    if (!use_odometry_yaw_ && !use_manual_datum_ && !use_navsat_heading_yaw_)
     {
       imu_sub_ = nh.subscribe("imu/data", 1, &NavSatTransform::imuCallback, this);
+    }
+    else if(use_navsat_heading_yaw_)
+    {
+      navsat_heading_sub_ = nh.subscribe("gps/heading", 1, &NavSatTransform::navsatHeadingCallback, this);
     }
 
     gps_odom_pub_ = nh.advertise<nav_msgs::Odometry>("odometry/gps", 10);
@@ -208,10 +214,14 @@ namespace RobotLocalization
     {
       computeTransform();
 
-      if (transform_good_ && !use_odometry_yaw_ && !use_manual_datum_)
+      if (transform_good_ && !use_odometry_yaw_ && !use_manual_datum_ && !use_navsat_heading_yaw_)
       {
         // Once we have the transform, we don't need the IMU
         imu_sub_.shutdown();
+      }
+      else if (transform_good_ && !use_odometry_yaw_ && !use_manual_datum_ && use_navsat_heading_yaw_)
+      {
+        navsat_heading_sub_.shutdown();
       }
     }
     else
@@ -238,11 +248,13 @@ namespace RobotLocalization
     // Only do this if:
     // 1. We haven't computed the odom_frame->cartesian_frame transform before
     // 2. We've received the data we need
+    ROS_INFO("HI 35");
     if (!transform_good_ &&
         has_transform_odom_ &&
         has_transform_gps_ &&
         has_transform_imu_)
     {
+      ROS_INFO("HI 36");
       // The cartesian pose we have is given at the location of the GPS sensor on the robot. We need to get the
       // cartesian pose of the robot's origin.
       tf2::Transform transform_cartesian_pose_corrected;
@@ -703,6 +715,7 @@ namespace RobotLocalization
                                                                    target_frame_trans,
                                                                    tf_silent_failure_);
 
+      ROS_WARN("Hi2");
       if (can_transform)
       {
         double roll_offset = 0;
@@ -715,6 +728,8 @@ namespace RobotLocalization
         RosFilterUtilities::quatToRPY(transform_orientation_, roll, pitch, yaw);
 
         ROS_DEBUG_STREAM("Initial orientation is " << transform_orientation_);
+
+        ROS_WARN("Hi3");
 
         // Apply the offset (making sure to bound them), and throw them in a vector
         tf2::Vector3 rpy_angles(FilterUtilities::clampRotation(roll - roll_offset),
@@ -729,11 +744,34 @@ namespace RobotLocalization
         rpy_angles = mat * rpy_angles;
         transform_orientation_.setRPY(rpy_angles.getX(), rpy_angles.getY(), rpy_angles.getZ());
 
-        ROS_DEBUG_STREAM("Initial corrected orientation roll, pitch, yaw is (" <<
+        ROS_INFO("Initial rotation is %f", rpy_angles.getZ());
+
+        ROS_INFO_STREAM("Initial corrected orientation roll, pitch, yaw is (" <<
                          rpy_angles.getX() << ", " << rpy_angles.getY() << ", " << rpy_angles.getZ() << ")");
+
+        ROS_WARN("Hi4 %f",  rpy_angles.getZ());
 
         has_transform_imu_ = true;
       }
+    }
+  }
+
+
+  void NavSatTransform::navsatHeadingCallback(const geometry_msgs::QuaternionStampedConstPtr& msg)
+  {
+    // Users can optionally use the (potentially fused) heading from
+    // a navsat heading 
+
+    if (!transform_good_ && !use_odometry_yaw_ && !use_manual_datum_ && use_navsat_heading_yaw_)
+    {
+      sensor_msgs::Imu *imu = new sensor_msgs::Imu();
+      imu->orientation = msg->quaternion;
+      imu->header.frame_id = msg->header.frame_id;
+      imu->header.stamp = msg->header.stamp;
+      sensor_msgs::ImuConstPtr imuPtr(imu);
+
+      ROS_WARN("Hi_1");
+      imuCallback(imuPtr);
     }
   }
 

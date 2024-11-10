@@ -43,6 +43,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <geometry_msgs/QuaternionStamped.h>
 
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -121,6 +122,11 @@ class NavSatTransform
     //! @param[in] msg The IMU message to process
     //!
     void imuCallback(const sensor_msgs::ImuConstPtr& msg);
+
+    //! @brief Callback for the navsat heading data
+    //! @param[in] msg The IMU message to process
+    //!
+    void navsatHeadingCallback(const geometry_msgs::QuaternionStampedConstPtr& msg);
 
     //! @brief Callback for the odom data
     //! @param[in] msg The odometry message to process
@@ -205,6 +211,10 @@ class NavSatTransform
     //! @brief Whether we get the transform's yaw from the odometry or IMU source
     //!
     bool use_odometry_yaw_;
+
+    //! @brief If this is true, and a topic navsat/heading with an geometry_msgs/QuaternionStamped is used for yaw
+    //!
+    bool use_navsat_heading_yaw_;
 
     //! @brief Whether we use a Local Cartesian (tangent plane ENU) or the UTM coordinates as our cartesian
     //!
@@ -343,6 +353,10 @@ class NavSatTransform
     //! @brief Subscribes to imu topic
     //!
     ros::Subscriber imu_sub_;
+
+    //! @brief Subscribes to imu topic
+    //!
+    ros::Subscriber navsat_heading_sub_;
 
     //! @brief Odometry subscriber
     //!

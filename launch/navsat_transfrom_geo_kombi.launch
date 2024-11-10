@@ -1,0 +1,11 @@
+<!-- Be Carfull: This config willcase odom drift over time. 
+This is only possible the odometry has no drift w.r.t. to the utm frame-->
+<launch>
+  <rosparam command="load" file="$(find ais_robot_localization)/params/navsat_transform_geo_kombi.yaml" />
+
+  <node pkg="ais_robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true">
+      <remap from="odometry/filtered" to="/odom_dlo"/> <!-- Be Carfull: This config willcase odom drift over time. This is only possible -->
+    <remap from="gps/fix" to="/navsat/fix"/>
+    <remap from="imu/data" to="/navsat/orientation/fixCov"/>  
+  </node>
+</launch>
