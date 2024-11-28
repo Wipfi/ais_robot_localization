@@ -1,0 +1,12 @@
+base_link_frame: "base_link"
+use_external_heading: true
+calculate_heading_from_trajectory: false
+overwrite_covariance_matrix: false
+heading_reference_length: 10
+publish_imu_message_with_orientation: true
+#base_pose_covariance: [1000, 0.0, 0.0, 0.0, 0.0, 0.0, ##needs still to be added in code....
+#                        0.0, 1000, 0.0, 0.0, 0.0, 0.0,
+#                        0.0, 0.0, 1500, 0.0, 0.0, 0.0,
+#                        0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
+#                        0.0, 0.0, 0.0, 0.0, 0.1, 0.0,
+#                        0.0, 0.0, 0.0, 0.0, 0.0, 0.1]

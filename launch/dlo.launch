@@ -1,0 +1,36 @@
+<!--
+
+  Copyright (c) 2022, University of California, Los Angeles
+
+  Authors: Kenny J. Chen, Brett T. Lopez
+  Contact: kennyjchen@ucla.edu, btlopez@ucla.edu
+
+-->
+
+<launch>
+  <arg name="rviz" default="true"/>
+
+ <!-- <arg name="pointcloud_topic" default="obstacle_point_cloud"/>-->
+  <arg name="pointcloud_topic" default="/livox/lidar"/>
+  <arg name="imu_topic" default="/livox/imu"/>
+
+  <!-- DLO Odometry Node -->
+  <node name="dlo_odom" pkg="direct_lidar_odometry" type="dlo_odom_node" output="screen" clear_params="true">
+
+    <!-- Load parameters -->
+    <rosparam file="$(find ais_robot_localization)/params/dlo.yaml" command="load"/>
+
+    <!-- Subscriptions -->
+    <remap from="~pointcloud" to="$(arg pointcloud_topic)"/>
+    <remap from="~imu" to="$(arg imu_topic)"/>
+
+    <!-- Publications -->
+    <remap from="~odom" to="/localization/odometry/odom_lidar"/>
+    <remap from="~pose" to="/localization/odometry/odom_lidar_pose"/>
+    <remap from="~kfs" to="/localization/odometry/odom_lidar_keyframe"/>
+    <remap from="~keyframe" to="/localization/odometry/odom_lidar_keyframe_pointcloud"/>
+  </node>
+
+  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="static_tf_publisher_namspace_odom" args="0 0 0 0 0 0 map robot/odom" /> -->
+
+</launch>

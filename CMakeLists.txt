@@ -24,7 +24,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   tf2
   tf2_geometry_msgs
-  tf2_ros)
+  tf2_ros
+  rospy)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAML_CPP yaml-cpp)
@@ -56,6 +57,8 @@ add_definitions(-DEIGEN_NO_DEBUG -DEIGEN_MPL2_ONLY)
 
 set(ROSLINT_CPP_OPTS "--filter=-build/c++11,-runtime/references")
 roslint_cpp()
+
+catkin_python_setup()
 
 ###################################
 ## catkin specific configuration ##
