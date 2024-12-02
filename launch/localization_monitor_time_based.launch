@@ -1,0 +1,16 @@
+<launch>
+    <node name="localization_monitor" pkg="ais_robot_localization" type="localization_monitor_node.py" output="screen">     
+        <param name="dist_cum_threshold" value="15.0" />
+        <param name="publish_rate" value="0.5" /> 
+        <param name="max_poses_threshold" value="500"/>
+        <param name="time_based" value="true"/>
+        <param name="publish_gnss_with_scaled_covariance" value="true"/>
+        <remap from="/global_odom" to="/localization/preprocessing/global_odom_fix_Cov"/>
+        <remap from="/local_odom" to="/localization/odometry/odom_lidar"/>
+
+        <remap from="/global_odom_path" to="/localization/monitor/global_reference_path"/>
+        <remap from="/local_odom_path" to="/localization/monitor/local_reference_path"/>
+        <remap from="/localization_result" to="/localization/monitor/result"/>
+        <remap from="/RPE_Values" to="/localization/monitor/RPE_Values"/>
+    </node>
+</launch>

@@ -12,16 +12,16 @@
 
 <launch>
 
-  <rosparam command="load" file="$(find ais_robot_localization)/params/dual_ekf_navsat_example.yaml" />
+  <rosparam command="load" file="$(find ais_robot_localization)/params/ukf_dlo_geo_kombi_no_tf.yaml" />
 
-  <node pkg="ais_robot_localization" type="ekf_localization_node" name="ekf_se_odom" clear_params="true"/>
-
-  <node pkg="ais_robot_localization" type="ekf_localization_node" name="ekf_se_map" clear_params="true">
-    <remap from="odometry/filtered" to="odometry/filtered_map"/>
+  <node pkg="ais_robot_localization" type="ukf_localization_node" name="ukf_se_map" clear_params="true">
+    <remap from="odometry/filtered" to="/localization/ukf/filtered_map"/>
   </node>
 
   <node pkg="ais_robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true">
-    <remap from="odometry/filtered" to="odometry/filtered_map"/>
+    <remap from="odometry/filtered" to="/localization/ukf/odom_filtered_map"/>
+    <remap from="gps/fix" to="/navsat/fix"/>
+    <remap from="odometry/gps" to="/localization/navsat/odometry/gps"/>
+    <remap from="gps/filtered" to="/localization/navsat/filtered_gps"/>
   </node>
-
 </launch>

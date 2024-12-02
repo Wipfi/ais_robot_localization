@@ -8,13 +8,15 @@ ekf_se_map:
   print_diagnostics: true
   debug: true
 
+
+  publish_tf: false
   map_frame: map
   odom_frame: odom
   base_link_frame: base_link
   world_frame: map
 
   
-  odom0: odom_dlo
+  odom0: /localization/odometry/odom_lidar
   odom0_config: [true, true, true,
                  true, true, true,
                  false, false, false,
@@ -25,7 +27,7 @@ ekf_se_map:
   odom0_differential: true
   odom0_relative: false
 
-  odom1: odometry/gps/fixCov
+  odom1: /localization/preprocessing/global_odom_fix_Cov
   odom1_config: [true,  true,  true,
                  false, false, false,
                  false, false, false,
@@ -36,7 +38,7 @@ ekf_se_map:
   odom1_differential: false
   odom1_relative: false
 
-  imu0: /navsat/orientation/fixCov
+  imu0: /localization/preprocessing/global_orientation_fix_Cov
   imu0_config: [false, false, false,
                 true,  true,  true,
                 false, false, false,
@@ -54,7 +56,7 @@ ekf_se_map:
                              0,    0,    2.0, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                              0,    0,    0,    0.1,  0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                              0,    0,    0,    0,    0.1,  0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                             0,    0,    0,    0,    0,    0.3, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+                             0,    0,    0,    0,    0,    0.1, 0,     0,     0,    0,    0,    0,    0,    0,    0,
                              0,    0,    0,    0,    0,    0,    0.5,   0,     0,    0,    0,    0,    0,    0,    0,
                              0,    0,    0,    0,    0,    0,    0,     0.5,   0,    0,    0,    0,    0,    0,    0,
                              0,    0,    0,    0,    0,    0,    0,     0,     0.1,  0,    0,    0,    0,    0,    0,
@@ -80,17 +82,4 @@ ekf_se_map:
                                 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     1.0,  0,    0,
                                 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    1.0,  0,
                                 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    1.0]
-
-navsat_transform:
-  frequency: 10
-  delay: 5.0
-  magnetic_declination_radians: 0.0
-  yaw_offset: 0.0  # IMU reads 0 facing magnetic north, not east
-  zero_altitude: false
-  broadcast_cartesian_transform: true
-  broadcast_cartesian_transform_as_parent_frame: true
-  publish_filtered_gps: true
-  use_odometry_yaw: false
-  use_navsat_heading_yaw: false
-  wait_for_datum: false
 

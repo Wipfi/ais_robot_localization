@@ -1,0 +1,4 @@
+float32[] float_array
+geometry_msgs/PoseStamped pose_global
+geometry_msgs/PoseStamped pose_local
+float64 cumulative_length

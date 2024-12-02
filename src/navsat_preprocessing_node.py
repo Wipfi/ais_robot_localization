@@ -32,12 +32,12 @@ class NavsatPreprocessingNode:
         self.publish_imu_message_with_orientation = rospy.get_param('~publish_imu_message_with_orientation', False)
 
         # Load covariance matrix parameter (fallback to default if not provided)
-        self.pose_covariance = [1000, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                0.0, 1000, 0.0, 0.0, 0.0, 0.0,
-                                0.0, 0.0, 1500, 0.0, 0.0, 0.0,
-                                0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
-                                0.0, 0.0, 0.0, 0.0, 0.1, 0.0,
-                                0.0, 0.0, 0.0, 0.0, 0.0, 0.1]
+        self.pose_covariance = [1000, 0.0, 0.0,  0.0, 0.0, 0.0,
+                                0.0, 1000, 0.0,  0.0, 0.0, 0.0,
+                                0.0,  0.0, 1500, 0.0, 0.0, 0.0,
+                                0.0,  0.0, 0.0,  0.1, 0.0, 0.0,
+                                0.0,  0.0, 0.0,  0.0, 0.1, 0.0,
+                                0.0,  0.0, 0.0,  0.0, 0.0, 0.2]
 
         # Subscribe to the odometry and orientation topics
         rospy.Subscriber('/localization/preprocessing/input/gps_odometry', Odometry, self.odom_callback)
@@ -66,8 +66,7 @@ class NavsatPreprocessingNode:
         self.latest_orientation = None
 
         # Placeholder for the static transform matrix
-        self.base_link_orientation_source_transform = None
-        self.base_link_gps_source_transform = None
+        self.orientation_transform = "Not used for now, every thing related to geokombi, needs to be changed LOL"
 
     #def get_transform_orientation(self):
     #    return
@@ -77,18 +76,46 @@ class NavsatPreprocessingNode:
     #    return
 
     def odom_callback(self, msg):
-        # Store the latest odometry message
-        #if(self.latest_orientation == None):
-        #    return
+        # Store only do if orientation is available
         self.latest_odom = msg
+        if(self.latest_orientation is None or self.orientation_transform is None):
+            return
         self.publish_odom_with_pose_and_covariance()
 
 
     def orientation_with_heading_callback(self, msg):
         # Store the latest orientation message
         self.latest_orientation = msg
+
         if(self.publish_imu_message_with_orientation):
             self.publish_imu_with_orientation()
+
+
+    def apply_static_transform(self, quaternion):   
+        # Convert the orientation quaternion to a matrix
+        #orientation_matrix = tf_transform.quaternion_matrix([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+        
+        # Apply the stored transform
+        #transformed_matrix = tf_transform.concatenate_matrices(self.base_link_transform, orientation_matrix)
+        
+        # Convert back to quaternion
+        #transformed_quaternion = tf_transform.quaternion_from_matrix(transformed_matrix)
+
+        # Convert the input quaternion to a 4x4 rotation matrix
+        rotation_matrix = tf_transform.quaternion_matrix([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+    
+        # Define a 180-degree rotation around the Z-axis in the local coordinate system
+        local_z_rotation = tf_transform.quaternion_matrix([0, 0, 1, 0])  # 180 degrees around Z-axis
+    
+        # Apply the rotation in the local frame by post-multiplying the local Z rotation
+        # This rotates the orientation in its own local frame
+        rotated_matrix = tf_transform.concatenate_matrices(rotation_matrix, local_z_rotation)
+    
+        # Convert the resulting matrix back to a quaternion
+        rotated_quaternion = tf_transform.quaternion_from_matrix(rotated_matrix)
+    
+        # Return the rotated quaternion as a ROS Quaternion message
+        return Quaternion(*rotated_quaternion)
 
 
     #def orientation_callback(self, msg):
@@ -130,7 +157,9 @@ class NavsatPreprocessingNode:
         
         # Update the orientation and set the fixed covariance in the odometry message
         odom_with_pose.header.stamp = self.latest_odom.header.stamp  # Use the timestamp from the odometry message
+        odom_with_pose.child_frame_id = "geo_kombi_link"
         odom_with_pose.pose.covariance = self.pose_covariance
+        odom_with_pose.pose.pose.orientation = self.apply_static_transform(self.latest_orientation.quaternion)
         
         # Publish the modified odometry message
         self.odom_with_pose_pub.publish(odom_with_pose)

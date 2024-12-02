@@ -7,7 +7,7 @@ from std_msgs.msg import Float32MultiArray
 from evo.core.trajectory import PoseTrajectory3D
 from localization_monitor.msg import LocalizationMonitorResult
 from bisect import bisect_left
-from ais_robot_localization.utils import odom_to_se3, se3_to_posestamped, calculate_euclidean_distance, snake_alignment, calculate_rpe_data
+from utils import odom_to_se3, se3_to_posestamped, calculate_euclidean_distance, snake_alignment, calculate_rpe_data
 
 class OdometryComparisonNode:
     def __init__(self):
@@ -15,8 +15,6 @@ class OdometryComparisonNode:
         rospy.init_node('odometry_comparison_node')
 
         # Parameters
-        self.global_odom_topic = rospy.get_param('~global_odom_topic', '/odometry/gps_with_orientation')
-        self.local_odom_topic = rospy.get_param('~local_odom_topic', '/odom_dlo')
         self.dist_cum_threshold = rospy.get_param('~dist_cum_threshold', 15.0)
         self.max_poses_threshold = rospy.get_param('~max_poses_threshold', 500) 
         self.publish_rate = rospy.get_param('~publish_rate', 1.0)
@@ -27,12 +25,13 @@ class OdometryComparisonNode:
         self.lock = threading.Lock()
 
         # Error Publisher
-        self.feature_pub = rospy.Publisher('RPE_values', Float32MultiArray, queue_size=10)
+        self.feature_pub = rospy.Publisher('/RPE_Values', Float32MultiArray, queue_size=10)
 
         # Publishers for RViz visualization
         self.global_odom_path_pub = rospy.Publisher('/global_odom_path', Path, queue_size=10)
         self.local_odom_path_pub = rospy.Publisher('/local_odom_path', Path, queue_size=10)
         self.localization_result_pub = rospy.Publisher('/localization_result', LocalizationMonitorResult, queue_size=10)
+        self.gnss_with_scaled_covariance_pub = rospy.Publisher('/gnss_with_scaled_covariance', Odometry, queue_size=10)
 
         # Data storage
         self.global_odom_poses = []
@@ -45,8 +44,6 @@ class OdometryComparisonNode:
         # Initialize Path messages
         self.global_odom_path = Path()
         self.local_odom_path = Path()
-        #self.global_odom_path_selected = Path()
-        #self.local_odom_selected = Path()
 
         # Set up throttling for path publishing
         self.last_publish_time = rospy.Time.from_sec(0.0)
@@ -54,10 +51,11 @@ class OdometryComparisonNode:
         self.local_frame = ""
         self.child_frame = ""
         self.time_newest_global_pose = rospy.Time.from_sec(0.0)
+        self.newest_global_odom = None
 
         # Subscribers
-        self.ref_sub = rospy.Subscriber(self.global_odom_topic, Odometry, self.global_odom_callback)
-        self.local_odom_sub = rospy.Subscriber(self.local_odom_topic, Odometry, self.local_odom_callback)
+        self.ref_sub = rospy.Subscriber("/global_odom", Odometry, self.global_odom_callback)
+        self.local_odom_sub = rospy.Subscriber("/local_odom", Odometry, self.local_odom_callback)
 
         rospy.loginfo("OdometryComparisonNode initialized")
 
@@ -110,6 +108,9 @@ class OdometryComparisonNode:
                     self.find_corresponding_poses()
                     self.align_local_to_global_odom_and_calc_errors(msg.header)
 
+                    if self.newest_global_odom is not None and self.publish_gnss_with_scaled_covariance:
+                        self.publish_global_odom_with_scaled_covariance()
+
                     self.publish_global_odom_path(msg.header)
                     self.publish_local_odom_path(msg.header)
                     
@@ -117,6 +118,14 @@ class OdometryComparisonNode:
                     self.last_publish_time = current_time
             except Exception as e:
                 rospy.logerr(f"Error in local_odom_callback: {e}")
+
+    def publish_global_odom_with_scaled_covariance(self):
+
+        covariance = self.newest_global_odom.pose.covariance
+        rospy.loginfo(covariance)
+
+        self.gnss_with_scaled_covariance_pub(self.newest_global_odom)
+
 
     def publish_results(self, rpe_avg_trans=float('inf'), rpe_avg_rot=float('inf'), rpe_max_trans=float('inf'), rpe_max_rot=float('inf')):
         feature_msg = Float32MultiArray()

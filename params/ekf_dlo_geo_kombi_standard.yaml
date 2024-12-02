@@ -1,5 +1,5 @@
 # For parameter descriptions, please refer to the template parameter files for each node.
-ukf_se_map:
+ekf_se_map:
   frequency: 5
   sensor_timeout: 0.5
   two_d_mode: false
@@ -14,7 +14,7 @@ ukf_se_map:
   world_frame: map
 
   
-  odom0: odom_dlo
+  odom0: /localization/odometry/odom_lidar
   odom0_config: [true, true, true,
                  true, true, true,
                  false, false, false,
@@ -25,7 +25,7 @@ ukf_se_map:
   odom0_differential: true
   odom0_relative: false
 
-  odom1: /odometry/gps
+  odom1: /localization/preprocessing/global_odom_fix_Cov
   odom1_config: [true,  true,  true,
                  false, false, false,
                  false, false, false,
@@ -36,7 +36,7 @@ ukf_se_map:
   odom1_differential: false
   odom1_relative: false
 
-  imu0: /navsat/orientation/fixCov
+  imu0: /localization/preprocessing/global_orientation_fix_Cov
   imu0_config: [false, false, false,
                 true,  true,  true,
                 false, false, false,

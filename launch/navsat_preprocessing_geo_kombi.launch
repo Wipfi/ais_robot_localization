@@ -4,7 +4,7 @@
     <rosparam file="$(find ais_robot_localization)/params/navsat_preprocessing_geo_kombi.yaml" command="load" />
 
     <!-- Topic remapping -->
-    <remap from="/localization/preprocessing/input/gps_odometry" to="/localization/odometry/gps" />
+    <remap from="/localization/preprocessing/input/gps_odometry" to="/localization/navsat/odometry/gps" />
     <remap from="/localization/preprocessing/input/orientation_with_global_heading" to="/navsat/orientation" />
     <remap from="/localization/preprocessing/input/local_reference" to="/localization/odometry/odom_lidar" />
     <remap from="/localization/preprocessing/output/odometry" to="/localization/preprocessing/global_odom_fix_Cov" />

@@ -3,14 +3,15 @@
 import rospy
 from nav_msgs.msg import Odometry, Path
 from localization_monitor.msg import LocalizationMonitorResult
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from std_msgs.msg import Float32MultiArray
 from evo.core.trajectory import PoseTrajectory3D
 from localization_monitor.msg import LocalizationMonitorResult
-from ais_robot_localization.utils import odom_to_se3, se3_to_posestamped, snake_alignment, gaussian_weight, euclidean_distance
+from utils import odom_to_se3, se3_to_posestamped, snake_alignment, gaussian_weight, euclidean_distance
 import threading
 import numpy as np
 import tf.transformations as tf
+import tf2_ros
 from geometry_msgs.msg import Quaternion
 
 class AlignmentBasedFilterNode:
@@ -18,8 +19,7 @@ class AlignmentBasedFilterNode:
         # Initialize the node
         rospy.init_node('alignment_filter_node')
 
-        # Parameters
-        self.local_odom_topic = rospy.get_param('~local_odom_topic', '/odom_dlo')
+        self.publish_tf = rospy.get_param('~publish_tf', True)
 
         # Initialize data storage
         self.data_list = []
@@ -36,15 +36,18 @@ class AlignmentBasedFilterNode:
         self.current_odom_state = None
         
         # Frame IDs for global and local paths
-        self.global_frame = ""
-        self.local_frame = ""
+        self.global_frame = "map"
+        self.local_frame = "odom"
         self.last_selected = -float('inf')
 
         self.current_transform = None
+
+        # Transform broadcaster
+        if self.publish_tf:
+            self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         
         # Publishers for path visualization
         self.global_path_pub = rospy.Publisher('/alignment_global_path', Path, queue_size=10)
-        #self.local_path_pub = rospy.Publisher('/alignment_local_path', Path, queue_size=10)
         self.local_path_transformed_pub = rospy.Publisher('/alignment_local_path_transformed', Path, queue_size=10)
         self.odom_publisher = rospy.Publisher('/alignment_odometry', Odometry, queue_size=10)
         
@@ -54,14 +57,51 @@ class AlignmentBasedFilterNode:
         # Initialize lock for thread safety
         self.lock = threading.Lock()
 
-        self.local_odom_sub = rospy.Subscriber(self.local_odom_topic, Odometry, self.local_odom_callback)
+        self.local_odom_sub = rospy.Subscriber("/local_odom", Odometry, self.local_odom_callback)
 
         rospy.loginfo("AlignmentBasedFilterNode initialized")
 
+
+    def publish_transform(self, odom):
+        """Publish the inverse of the current transformation as map -> odom."""
+        if self.current_transform is None:
+            return
+
+        try:
+            # Compute the inverse transform
+            inverse_transform = tf.inverse_matrix(self.current_transform)
+
+            # Create a TransformStamped message
+            t = TransformStamped()
+            t.header.stamp = odom.header.stamp
+            t.header.frame_id = self.global_frame  # Parent frame
+            t.child_frame_id = self.local_frame    # Child frame
+
+            # Extract translation and rotation
+            translation = inverse_transform[:3, 3]
+            rotation_matrix = inverse_transform[:3, :3]
+
+            # Convert rotation matrix to quaternion
+            quaternion = tf.quaternion_from_matrix(inverse_transform)
+
+            # Fill the TransformStamped message
+            t.transform.translation.x = translation[0]
+            t.transform.translation.y = translation[1]
+            t.transform.translation.z = translation[2]
+            t.transform.rotation.x = quaternion[0]
+            t.transform.rotation.y = quaternion[1]
+            t.transform.rotation.z = quaternion[2]
+            t.transform.rotation.w = quaternion[3]
+
+            # Broadcast the transform
+            self.tf_broadcaster.sendTransform(t)
+            rospy.loginfo("Published transform: map -> odom")
+        except Exception as e:
+            rospy.logerr(f"Error publishing transform: {e}")
+
+
     def local_odom_callback(self, odom_msg):
         with self.lock:
-            if self.current_transform is None:
-                return
             # Extract the current position and orientation from the Odometry message
             position = np.array([odom_msg.pose.pose.position.x,
                                 odom_msg.pose.pose.position.y,
@@ -77,13 +117,17 @@ class AlignmentBasedFilterNode:
             current_pose_matrix[:3, 3] = position[:3]
             
             # Apply the transformation
-            transformed_pose_matrix = np.dot(self.current_transform, current_pose_matrix)
+            if self.current_transform is None or self.used_length < 10.0:
+                transformed_pose_matrix = current_pose_matrix
+            else:
+                if self.publish_tf:
+                    self.publish_transform(odom_msg)
+                transformed_pose_matrix = np.dot(self.current_transform, current_pose_matrix)
             
             # Extract the transformed position
             transformed_position = transformed_pose_matrix[:3, 3]
             
             # Convert the transformed rotation matrix back to a quaternion
-            transformed_rotation_matrix = transformed_pose_matrix[:3, :3]
             transformed_quaternion = tf.quaternion_from_matrix(transformed_pose_matrix)
             
             # Update the Odometry message
@@ -119,17 +163,6 @@ class AlignmentBasedFilterNode:
                 self.local_frame = msg.pose_local.header.frame_id
 
             features = msg.float_array
-
-            #ToDo: this is just a test
-            #if(len(self.data_list) >= 1):
-            #    length = self.data_list[-1].cumulative_length - self.last_selected
-            #else:
-            #    length = 0.0
-            #if(length > 60 and (features[0] > 1.5 or features[2] > 0.3)):
-            #    return
-            #else:
-            #    self.last_selected = msg.cumulative_length
-
 
             # Store the message in the data list
             self.data_list.append(msg)
@@ -186,14 +219,14 @@ class AlignmentBasedFilterNode:
         local_trajectory = PoseTrajectory3D(poses_se3=np.copy(self.local_poses), timestamps=self.time_stamp_list)
         global_trajectory = PoseTrajectory3D(poses_se3=np.copy(self.global_poses), timestamps=self.time_stamp_list)
 
-        error_mean = np.square(np.mean(self.error_trans_avg))
-        error_distance_squared = np.square(np.array(self.distances_current_estimate))
-        error_distance_squared_mean = np.mean(error_distance_squared)
+        #error_mean = np.square(np.mean(self.error_trans_avg))
+        #error_distance_squared = np.square(np.array(self.distances_current_estimate))
+        #error_distance_squared_mean = np.mean(error_distance_squared)
 
 
         penalty_values = np.array(self.error_trans_avg)
-        if(self.used_length > 30.0):
-            penalty_values += error_distance_squared
+        #if(self.used_length > 30.0):
+        #    penalty_values += error_distance_squared
 
         weights = gaussian_weight(penalty_values, np.median(penalty_values))
         rospy.loginfo("median penalty: %f, min weight: %f, max weigth: %f", np.median(penalty_values), np.min(weights), np.max(weights))

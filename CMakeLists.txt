@@ -74,6 +74,12 @@ add_service_files(
     ToLL.srv
 )
 
+## Generate messages in the 'msg' folder
+add_message_files(
+   FILES
+   LocalizationMonitorResult.msg
+ )
+
 generate_messages(
   DEPENDENCIES
     geographic_msgs

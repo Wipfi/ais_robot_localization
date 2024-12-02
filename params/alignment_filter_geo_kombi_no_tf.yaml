@@ -1,0 +1,4 @@
+# publishing the transform should be done by other node (e.g. ukf or ekf)
+
+alignment_filter:
+  publish_tf: false

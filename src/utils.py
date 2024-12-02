@@ -173,9 +173,9 @@ def snake_alignment(trajectory: PoseTrajectory3D, reference_trajectory: PoseTraj
 
     rotation, translation = kabsch_algorithm(trajectory, reference_trajectory, weights)
     print("---------------------------")
-    print('Translation')
-    print(rotation)
     print('Rotation')
+    print(rotation)
+    print('Translation')
     print(translation)
 
 
