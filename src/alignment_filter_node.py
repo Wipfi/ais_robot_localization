@@ -69,7 +69,7 @@ class AlignmentBasedFilterNode:
 
         try:
             # Compute the inverse transform
-            inverse_transform = tf.inverse_matrix(self.current_transform)
+            transform = self.current_transform#tf.inverse_matrix(self.current_transform)
 
             # Create a TransformStamped message
             t = TransformStamped()
@@ -77,12 +77,13 @@ class AlignmentBasedFilterNode:
             t.header.frame_id = self.global_frame  # Parent frame
             t.child_frame_id = self.local_frame    # Child frame
 
+
             # Extract translation and rotation
-            translation = inverse_transform[:3, 3]
-            rotation_matrix = inverse_transform[:3, :3]
+            translation = transform[:3, 3]
+            rotation_matrix = transform[:3, :3]
 
             # Convert rotation matrix to quaternion
-            quaternion = tf.quaternion_from_matrix(inverse_transform)
+            quaternion = tf.quaternion_from_matrix(transform)
 
             # Fill the TransformStamped message
             t.transform.translation.x = translation[0]

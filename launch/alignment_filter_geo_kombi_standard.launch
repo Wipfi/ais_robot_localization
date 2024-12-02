@@ -15,5 +15,6 @@
         <remap from="gps/fix" to="/navsat/fix"/>
         <remap from="odometry/gps" to="/localization/navsat/odometry/gps"/>
         <remap from="gps/filtered" to="/localization/navsat/ukf/filtered_gps"/>
+        <remap from="imu/data" to="/localization/preprocessing/global_orientation_fix_Cov"/>
     </node>
 </launch>
