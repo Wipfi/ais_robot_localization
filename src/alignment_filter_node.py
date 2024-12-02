@@ -24,6 +24,7 @@ class AlignmentBasedFilterNode:
         # Initialize data storage
         self.data_list = []
         self.error_trans_avg = []
+        self.error_rot_avg = []
         self.distances_current_estimate = []
         self.time_stamp_list = []
         self.global_path = Path()
@@ -218,12 +219,12 @@ class AlignmentBasedFilterNode:
         self.local_odom_path = Path()
 
         local_trajectory = PoseTrajectory3D(poses_se3=np.copy(self.local_poses), timestamps=self.time_stamp_list)
+        local_trajectory_no_snake = PoseTrajectory3D(poses_se3=np.copy(self.local_poses), timestamps=self.time_stamp_list)
         global_trajectory = PoseTrajectory3D(poses_se3=np.copy(self.global_poses), timestamps=self.time_stamp_list)
 
         #error_mean = np.square(np.mean(self.error_trans_avg))
         #error_distance_squared = np.square(np.array(self.distances_current_estimate))
         #error_distance_squared_mean = np.mean(error_distance_squared)
-
 
         penalty_values = np.array(self.error_trans_avg)
         #if(self.used_length > 30.0):
@@ -233,8 +234,9 @@ class AlignmentBasedFilterNode:
         rospy.loginfo("median penalty: %f, min weight: %f, max weigth: %f", np.median(penalty_values), np.min(weights), np.max(weights))
         self.current_transform = snake_alignment(local_trajectory, global_trajectory, weights=weights)
 
+        local_trajectory_no_snake.transform(self.current_transform)
         self.local_path_transformed.poses.clear()      
-        for i, pose_se3 in enumerate(local_trajectory.poses_se3):
+        for i, pose_se3 in enumerate(local_trajectory_no_snake.poses_se3):
             pose_stamped = se3_to_posestamped(pose_se3, self.time_stamp_list[i], z_to_zero=False)
             pose_stamped.header = header
             pose_stamped.header.frame_id = self.global_frame
