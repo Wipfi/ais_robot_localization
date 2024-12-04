@@ -1,7 +1,7 @@
 <launch>
     <node name="localization_monitor" pkg="ais_robot_localization" type="localization_monitor_node.py" output="screen">     
         <param name="dist_cum_threshold" value="15.0" />
-        <param name="publish_rate" value="0.5" /> 
+        <param name="publish_rate" value="1.0" /> 
         <param name="max_poses_threshold" value="500"/>
         <param name="time_based" value="true"/>
         <param name="publish_gnss_with_scaled_covariance" value="true"/>

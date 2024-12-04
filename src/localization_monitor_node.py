@@ -69,6 +69,7 @@ class OdometryComparisonNode:
                 self.time_newest_global_pose = msg.header.stamp
                 self.global_frame = msg.header.frame_id
                 self.child_frame =  msg.child_frame_id
+                self.newest_global_odom = msg
             except Exception as e:
                 rospy.logerr(f"Error in global_odom_callback: {e}")
         rospy.logdebug("Received message on global_odom topic")
@@ -77,13 +78,15 @@ class OdometryComparisonNode:
         with self.lock:
             try:
                 pose_se3 = odom_to_se3(msg.pose.pose)
-                timestamp = msg.header.stamp
+                current_time = msg.header.stamp
 
                 if self.local_odom_poses:
                     last_pose_se3 = self.local_odom_poses[-1]
                     dist = calculate_euclidean_distance(last_pose_se3, pose_se3)
-                    if(dist < 0.2): #ToDo How to handle this?? evtl update newest?
+                    if(dist < 0.2 and not self.time_based): #ToDo How to handle this?? evtl update newest?
                         return 
+                    if(self.time_based and not (current_time - self.last_publish_time).to_sec() >= (1.0 / self.publish_rate)):
+                        return
                     self.cumulative_distance += dist
                     self.cumulative_length += dist
 
@@ -96,10 +99,9 @@ class OdometryComparisonNode:
 
                 # Add the new pose and timestamp
                 self.local_odom_poses.append(pose_se3)
-                self.local_odom_timestamps.append(timestamp)
+                self.local_odom_timestamps.append(current_time)
 
                 # Throttle the publication rate
-                current_time = timestamp
                 if (current_time - self.last_publish_time).to_sec() >= (1.0 / self.publish_rate) and (self.cumulative_distance > 1.0 or self.time_based):
                     rospy.loginfo("Recalculate.....")
 
@@ -124,7 +126,7 @@ class OdometryComparisonNode:
         covariance = self.newest_global_odom.pose.covariance
         rospy.loginfo(covariance)
 
-        self.gnss_with_scaled_covariance_pub(self.newest_global_odom)
+        self.gnss_with_scaled_covariance_pub.publish(self.newest_global_odom)
 
 
     def publish_results(self, rpe_avg_trans=float('inf'), rpe_avg_rot=float('inf'), rpe_max_trans=float('inf'), rpe_max_rot=float('inf')):
@@ -147,22 +149,6 @@ class OdometryComparisonNode:
         result.pose_local = pose_stamped_local
         result.cumulative_length = self.cumulative_length
         self.localization_result_pub.publish(result)
-
-        
-        #if(rpe_avg_trans < 1.0):
-        #    used_index = int(len(self.global_odom_poses) / 2)
-        #    pose_stamped = se3_to_posestamped(self.global_odom_poses[used_index], self.local_odom_timestamps[used_index], z_to_zero=False)
-        #    pose_stamped.header.stamp = self.local_odom_timestamps[used_index]
-        #    pose_stamped.header.frame_id = self.global_frame
-        #    self.global_odom_path_selected.poses.append(pose_stamped)
-            
-        #    # publish path
-        #    self.global_odom_path_selected.header.frame_id = self.global_frame
-        #    self.global_odom_path_selected.header.stamp = self.time_newest_global_pose
-        #    # ToDo: Add child frame?
-        #    self.global_odom_path_selected_pub.publish(self.global_odom_path_selected)
-
-
 
 
     def calculate_and_publish_results(self, global_odom_traj, local_odom_trajectory):
