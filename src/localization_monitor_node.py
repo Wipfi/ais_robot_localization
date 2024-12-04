@@ -5,7 +5,7 @@ import numpy as np
 from nav_msgs.msg import Odometry, Path
 from std_msgs.msg import Float32MultiArray
 from evo.core.trajectory import PoseTrajectory3D
-from localization_monitor.msg import LocalizationMonitorResult
+from ais_robot_localization.msg import LocalizationMonitorResult
 from bisect import bisect_left
 from utils import odom_to_se3, se3_to_posestamped, calculate_euclidean_distance, snake_alignment, calculate_rpe_data
 

@@ -2,11 +2,10 @@
 
 import rospy
 from nav_msgs.msg import Odometry, Path
-from localization_monitor.msg import LocalizationMonitorResult
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from std_msgs.msg import Float32MultiArray
 from evo.core.trajectory import PoseTrajectory3D
-from localization_monitor.msg import LocalizationMonitorResult
+from ais_robot_localization.msg import LocalizationMonitorResult
 from utils import odom_to_se3, se3_to_posestamped, snake_alignment, gaussian_weight, euclidean_distance
 import threading
 import numpy as np
