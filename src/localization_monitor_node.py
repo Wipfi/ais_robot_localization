@@ -40,6 +40,7 @@ class OdometryComparisonNode:
         self.local_odom_timestamps = []
         self.cumulative_distance = 0.0
         self.cumulative_length = 0.0
+        self.current_errors_internal = [0.0, 0.0, 0.0, 0.0]
 
         # Initialize Path messages
         self.global_odom_path = Path()
@@ -124,6 +125,12 @@ class OdometryComparisonNode:
     def publish_global_odom_with_scaled_covariance(self):
 
         covariance = self.newest_global_odom.pose.covariance
+
+        beta_trans = 5.0
+        beta_rot = 20.0
+
+        translation_scale = np.exp()
+
         rospy.loginfo(covariance)
 
         self.gnss_with_scaled_covariance_pub.publish(self.newest_global_odom)
