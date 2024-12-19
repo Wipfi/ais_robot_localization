@@ -111,8 +111,8 @@ class OdometryComparisonNode:
                     self.find_corresponding_poses()
                     self.align_local_to_global_odom_and_calc_errors(msg.header)
 
-                    if self.newest_global_odom is not None and self.publish_gnss_with_scaled_covariance:
-                        self.publish_global_odom_with_scaled_covariance()
+                    #if self.newest_global_odom is not None and self.publish_gnss_with_scaled_covariance:
+                    #    self.publish_global_odom_with_scaled_covariance()
 
                     self.publish_global_odom_path(msg.header)
                     self.publish_local_odom_path(msg.header)
@@ -122,18 +122,18 @@ class OdometryComparisonNode:
             except Exception as e:
                 rospy.logerr(f"Error in local_odom_callback: {e}")
 
-    def publish_global_odom_with_scaled_covariance(self):
+    #def publish_global_odom_with_scaled_covariance(self):
 
-        covariance = self.newest_global_odom.pose.covariance
+        #covariance = self.newest_global_odom.pose.covariance
 
-        beta_trans = 5.0
-        beta_rot = 20.0
+        #beta_trans = 5.0
+        #beta_rot = 20.0
 
-        translation_scale = np.exp()
+        #translation_scale = np.exp()
 
-        rospy.loginfo(covariance)
+        #rospy.loginfo(covariance)
 
-        self.gnss_with_scaled_covariance_pub.publish(self.newest_global_odom)
+        #self.gnss_with_scaled_covariance_pub.publish(self.newest_global_odom)
 
 
     def publish_results(self, rpe_avg_trans=float('inf'), rpe_avg_rot=float('inf'), rpe_max_trans=float('inf'), rpe_max_rot=float('inf')):
