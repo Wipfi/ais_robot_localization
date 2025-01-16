@@ -96,7 +96,7 @@ class AlignmentBasedFilterNode:
 
             # Broadcast the transform
             self.tf_broadcaster.sendTransform(t)
-            rospy.loginfo("Published transform: map -> odom")
+            #rospy.loginfo("Published transform: map -> odom")
         except Exception as e:
             rospy.logerr(f"Error publishing transform: {e}")
 

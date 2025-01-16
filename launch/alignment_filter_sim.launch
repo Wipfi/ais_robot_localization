@@ -1,0 +1,12 @@
+<launch>
+    <rosparam command="load" file="$(find ais_robot_localization)/params/alignment_filter_geo_kombi_standard.yaml" />
+
+
+    <node name="alignment_filter" pkg="ais_robot_localization" type="alignment_filter_node.py" output="screen">     
+        <remap from="/local_odom" to="/localization/odometry/odom_lidar"/>
+        <remap from="/alignment_odometry" to="/localization/alignment_filter/odom_map"/>
+        <remap from="/alignment_global_path" to="/localization/alignment_filter/global_path"/>
+        <remap from="/alignment_local_path_transformed" to="/localization/alignment_filter/local_path"/>
+        <remap from="/localization_result" to="/localization/monitor/result"/>
+    </node>
+</launch>

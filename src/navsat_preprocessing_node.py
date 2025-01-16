@@ -105,7 +105,7 @@ class NavsatPreprocessingNode:
         rotation_matrix = tf_transform.quaternion_matrix([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
     
         # Define a 180-degree rotation around the Z-axis in the local coordinate system
-        local_z_rotation = tf_transform.quaternion_matrix([0, 0, 1, 0])  # 180 degrees around Z-axis
+        local_z_rotation = tf_transform.quaternion_matrix([0, 0, 0, 1])#tf_transform.quaternion_matrix([0, 0, 1, 0])  # 180 degrees around Z-axis
     
         # Apply the rotation in the local frame by post-multiplying the local Z rotation
         # This rotates the orientation in its own local frame
