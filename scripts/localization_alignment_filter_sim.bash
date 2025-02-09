@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start Byobu session
-byobu new-session -d -s Localization_Session -n DLO
+byobu new-session -d -s Localization_Session
 
 # Window 2: Data Conversion
 byobu new-window -t Localization_Session -n "Data Conversion"
@@ -24,4 +24,4 @@ roscd ais_robot_localization; cd config;
 rviz' C-m
 
 # Attach to the Byobu session
-byobu attach -t Localization_Session
+#byobu attach -t Localization_Session

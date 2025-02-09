@@ -229,8 +229,10 @@ class AlignmentBasedFilterNode:
         #if(self.used_length > 30.0):
         #    penalty_values += error_distance_squared
 
-        weights = gaussian_weight(penalty_values, np.median(penalty_values))
-        rospy.loginfo("median penalty: %f, min weight: %f, max weigth: %f", np.median(penalty_values), np.min(weights), np.max(weights))
+        ref_value =  np.percentile(penalty_values, 25)
+
+        weights = gaussian_weight(penalty_values, ref_value)
+        rospy.loginfo("ref_val: %f, min weight: %f, max weigth: %f", ref_value, np.min(weights), np.max(weights))
         self.current_transform = snake_alignment(local_trajectory, global_trajectory, weights=weights)
 
         local_trajectory_no_snake.transform(self.current_transform)
