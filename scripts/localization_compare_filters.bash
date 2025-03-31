@@ -15,9 +15,9 @@ byobu send-keys -t Localization_Session:1 'source ~/tedusar_ws/devel/setup.bash;
 roslaunch ais_robot_localization navsat_preprocessing_geo_kombi.launch' C-m
 
 # Window 3: Filtering
-byobu new-window -t Localization_Session -n "UKF"
+byobu new-window -t Localization_Session -n "EKF"
 byobu send-keys -t Localization_Session:2 'source ~/tedusar_ws/devel/setup.bash; 
-roslaunch ais_robot_localization ukf_dlo_geo_kombi_standard.launch' C-m
+roslaunch ais_robot_localization ekf_dlo_geo_kombi_standard.launch' C-m
 
 # Window 4: Alignment Filter
 byobu new-window -t Localization_Session -n "Alignment Filter"
@@ -32,7 +32,7 @@ roslaunch ais_robot_localization localization_monitor.launch' C-m
 byobu new-window -t Localization_Session -n "Visualization"
 byobu send-keys -t Localization_Session:4 'source ~/tedusar_ws/devel/setup.bash; 
 roscd ais_robot_localization; cd config;
-rviz -d satelite_all_filters.rviz' C-m
+rviz -d $(rospack find ais_robot_localization)/config/satelite_all_filters.rviz' C-m
 
 # Attach to the Byobu session
 byobu attach -t Localization_Session

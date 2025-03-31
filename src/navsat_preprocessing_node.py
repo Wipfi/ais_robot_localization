@@ -35,9 +35,9 @@ class NavsatPreprocessingNode:
         self.pose_covariance = [1000, 0.0, 0.0,  0.0, 0.0, 0.0,
                                 0.0, 1000, 0.0,  0.0, 0.0, 0.0,
                                 0.0,  0.0, 1500, 0.0, 0.0, 0.0,
-                                0.0,  0.0, 0.0,  0.1, 0.0, 0.0,
-                                0.0,  0.0, 0.0,  0.0, 0.1, 0.0,
-                                0.0,  0.0, 0.0,  0.0, 0.0, 0.2]
+                                0.0,  0.0, 0.0,  0.5, 0.0, 0.0,
+                                0.0,  0.0, 0.0,  0.0, 0.5, 0.0,
+                                0.0,  0.0, 0.0,  0.0, 0.0, 0.5]
 
         # Subscribe to the odometry and orientation topics
         rospy.Subscriber('/localization/preprocessing/input/gps_odometry', Odometry, self.odom_callback)
@@ -105,7 +105,7 @@ class NavsatPreprocessingNode:
         rotation_matrix = tf_transform.quaternion_matrix([quaternion.x, quaternion.y, quaternion.z, quaternion.w])
     
         # Define a 180-degree rotation around the Z-axis in the local coordinate system
-        local_z_rotation = tf_transform.quaternion_matrix([0, 0, 0, 1])#tf_transform.quaternion_matrix([0, 0, 1, 0])  # 180 degrees around Z-axis
+        local_z_rotation = tf_transform.quaternion_matrix([0, 0, 1, 0]) #tf_transform.quaternion_matrix([0, 0, 1, 0])# # 180 degrees around Z-axis
     
         # Apply the rotation in the local frame by post-multiplying the local Z rotation
         # This rotates the orientation in its own local frame

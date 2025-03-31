@@ -20,8 +20,7 @@ roslaunch ais_robot_localization localization_monitor.launch' C-m
 # Window 4: Visualization
 byobu new-window -t Localization_Session -n "Visualization"
 byobu send-keys -t Localization_Session:2 'source ~/tedusar_ws/devel/setup.bash; 
-roscd ais_robot_localization; cd config;
-rviz' C-m
+rviz -d $(rospack find ais_robot_localization)/config/TrajectoryPlayer.rviz' C-m
 
 # Attach to the Byobu session
 #byobu attach -t Localization_Session

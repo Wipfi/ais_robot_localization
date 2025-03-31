@@ -40,7 +40,7 @@ class AlignmentBasedFilterNode:
         self.local_frame = "odom"
         self.last_selected = -float('inf')
 
-        self.current_transform = None
+        self.current_transform = np.eye(4) #None
 
         # Transform broadcaster
         if self.publish_tf:
@@ -118,12 +118,12 @@ class AlignmentBasedFilterNode:
             current_pose_matrix[:3, 3] = position[:3]
             
             # Apply the transformation
-            if self.current_transform is None or self.used_length < 10.0:
-                transformed_pose_matrix = current_pose_matrix
-            else:
-                if self.publish_tf:
-                    self.publish_transform(odom_msg)
-                transformed_pose_matrix = np.dot(self.current_transform, current_pose_matrix)
+            #if self.current_transform is None or self.used_length < 10.0:
+            #    transformed_pose_matrix = current_pose_matrix
+            #else:
+            if self.publish_tf:
+                self.publish_transform(odom_msg)
+            transformed_pose_matrix = np.dot(self.current_transform, current_pose_matrix)
             
             # Extract the transformed position
             transformed_position = transformed_pose_matrix[:3, 3]
@@ -237,7 +237,7 @@ class AlignmentBasedFilterNode:
 
         local_trajectory_no_snake.transform(self.current_transform)
         self.local_path_transformed.poses.clear()      
-        for i, pose_se3 in enumerate(local_trajectory_no_snake.poses_se3):
+        for i, pose_se3 in enumerate(local_trajectory.poses_se3): ##change here to remove visualization
             pose_stamped = se3_to_posestamped(pose_se3, self.time_stamp_list[i], z_to_zero=False)
             pose_stamped.header = header
             pose_stamped.header.frame_id = self.global_frame

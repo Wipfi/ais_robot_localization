@@ -191,11 +191,11 @@ def snake_alignment(trajectory: PoseTrajectory3D, reference_trajectory: PoseTraj
 
 
 
-def make_snake(trajectory: PoseTrajectory3D, fatness = 5.0):
+def make_snake(trajectory: PoseTrajectory3D, fatness = 3.0):
     if(len(trajectory.poses_se3) < 3):
         raise Exception("To short to be a snake :(")
     
-    translation_vector = np.array([0, fatness, 0, 1]) 
+    translation_vector = np.array([0, 0, fatness, 1]) 
 
     for i in range(0, len(trajectory.poses_se3) -1):
         # Convert quaternion to rotation matrix
