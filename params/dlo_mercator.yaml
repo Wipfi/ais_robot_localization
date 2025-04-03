@@ -15,7 +15,8 @@ dlo:
 
   imu: true
   gravityAlign: true
-  publishTF: true
+
+  publishTF: false
 
   odomNode:
     odom_frame: odom

@@ -150,6 +150,13 @@ class AlignmentBasedFilterNode:
                 w=transformed_quaternion[3]
             )
 
+            transformed_odom.pose.covariance = [1.0, 0.0, 0.0,  0.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0,  0.0, 0.0, 0.0,
+                                                0.0,  0.0, 1.0, 0.0, 0.0, 0.0,
+                                                0.0,  0.0, 0.0,  0.1, 0.0, 0.0,
+                                                0.0,  0.0, 0.0,  0.0, 0.1, 0.0,
+                                                0.0,  0.0, 0.0,  0.0, 0.0, 0.1]
+
             self.current_odom_state = transformed_odom
             self.odom_publisher.publish(transformed_odom)
 
