@@ -45,6 +45,10 @@ class AlignmentBasedFilterNode:
         # Transform broadcaster
         if self.publish_tf:
             self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+            self.tf_buffer = tf2_ros.Buffer()
+            self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+            self.timer =  rospy.Timer(rospy.Duration(0.2), self.publish_transform)
+
         
         # Publishers for path visualization
         self.global_path_pub = rospy.Publisher('/alignment_global_path', Path, queue_size=10)
@@ -55,25 +59,30 @@ class AlignmentBasedFilterNode:
         self.sub = rospy.Subscriber('/localization_result', LocalizationMonitorResult, self.localization_monitor_callback)
 
         # Initialize lock for thread safety
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
         self.local_odom_sub = rospy.Subscriber("/local_odom", Odometry, self.local_odom_callback)
 
         rospy.loginfo("AlignmentBasedFilterNode initialized")
 
 
-    def publish_transform(self, odom):
+
+    def publish_transform(self, event):
         """Publish the inverse of the current transformation as map -> odom."""
         if self.current_transform is None:
             return
-
+        
         try:
             # Compute the inverse transform
             transform = self.current_transform#tf.inverse_matrix(self.current_transform)
 
             # Create a TransformStamped message
             t = TransformStamped()
-            t.header.stamp = odom.header.stamp
+
+            # Lookup the latest odom -> base_link transform
+            latest_tf = self.tf_buffer.lookup_transform(self.local_frame, "base_link", rospy.Time(0), rospy.Duration(1.0))
+            t.header.stamp = latest_tf.header.stamp
+  
             t.header.frame_id = self.global_frame  # Parent frame
             t.child_frame_id = self.local_frame    # Child frame
 
@@ -96,7 +105,7 @@ class AlignmentBasedFilterNode:
 
             # Broadcast the transform
             self.tf_broadcaster.sendTransform(t)
-            #rospy.loginfo("Published transform: map -> odom")
+            rospy.loginfo("Published transform: map -> odom")
         except Exception as e:
             rospy.logerr(f"Error publishing transform: {e}")
 
@@ -121,8 +130,9 @@ class AlignmentBasedFilterNode:
             #if self.current_transform is None or self.used_length < 10.0:
             #    transformed_pose_matrix = current_pose_matrix
             #else:
-            if self.publish_tf:
-                self.publish_transform(odom_msg)
+            #if self.publish_tf:
+            #    self.publish_transform(odom_msg)
+            
             transformed_pose_matrix = np.dot(self.current_transform, current_pose_matrix)
             
             # Extract the transformed position
