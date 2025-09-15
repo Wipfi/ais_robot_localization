@@ -90,7 +90,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS
     include
-  LIBRARIES 
+  LIBRARIES
     ekf
     ekf_localization_nodelet
     filter_base
@@ -103,6 +103,7 @@ catkin_package(
     ros_robot_localization_listener
     ukf
     ukf_localization_nodelet
+    localization_monitor
   CATKIN_DEPENDS
     angles
     cmake_modules
@@ -152,6 +153,7 @@ add_library(navsat_transform src/navsat_transform.cpp)
 add_library(ekf_localization_nodelet src/ekf_localization_nodelet.cpp)
 add_library(ukf_localization_nodelet src/ukf_localization_nodelet.cpp)
 add_library(navsat_transform_nodelet src/navsat_transform_nodelet.cpp)
+add_library(localization_monitor src/localization_monitor.cpp src/se3_algorithms.cpp)
 
 # Executables
 add_executable(ekf_localization_node src/ekf_localization_node.cpp)
@@ -182,6 +184,7 @@ target_link_libraries(ukf_localization_nodelet ros_filter ${catkin_LIBRARIES})
 target_link_libraries(navsat_transform filter_utilities ros_filter_utilities ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(navsat_transform_node navsat_transform ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(navsat_transform_nodelet navsat_transform ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
+target_link_libraries(localization_monitor ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
 
 #############
 ## Install ##
@@ -201,6 +204,7 @@ install(TARGETS
   ros_robot_localization_listener
   ukf
   ukf_localization_nodelet
+  localization_monitor
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
@@ -215,7 +219,7 @@ install(TARGETS
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
   PATTERN ".svn" EXCLUDE)
 
 install(DIRECTORY launch/
