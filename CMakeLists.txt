@@ -160,11 +160,13 @@ add_executable(ekf_localization_node src/ekf_localization_node.cpp)
 add_executable(ukf_localization_node src/ukf_localization_node.cpp)
 add_executable(navsat_transform_node src/navsat_transform_node.cpp)
 add_executable(robot_localization_listener_node src/robot_localization_listener_node.cpp)
+add_executable(localization_monitor_node src/localization_monitor_node.cpp)
 
 # Dependencies
 add_dependencies(filter_base ${PROJECT_NAME}_gencpp)
 add_dependencies(navsat_transform ${PROJECT_NAME}_gencpp)
 add_dependencies(robot_localization_listener_node ${PROJECT_NAME}_gencpp)
+add_dependencies(localization_monitor_node ${PROJECT_NAME}_gencpp)
 
 # Linking
 target_link_libraries(ros_filter_utilities ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
@@ -185,6 +187,7 @@ target_link_libraries(navsat_transform filter_utilities ros_filter_utilities ${c
 target_link_libraries(navsat_transform_node navsat_transform ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(navsat_transform_nodelet navsat_transform ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(localization_monitor ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
+target_link_libraries(localization_monitor_node localization_monitor ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
 
 #############
 ## Install ##
@@ -214,6 +217,7 @@ install(TARGETS
   navsat_transform_node
   robot_localization_listener_node
   ukf_localization_node
+  localization_monitor_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark cpp header files for installation
