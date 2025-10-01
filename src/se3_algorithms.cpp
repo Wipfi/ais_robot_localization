@@ -147,32 +147,79 @@ RPEStats calculateRPE(const std::vector<Eigen::Isometry3d>& reference,
         return stats;
     }
 
-    double total_trans = 0.0;
-    double total_rot = 0.0;
-    double max_trans = 0.0;
-    double max_rot = 0.0;
-    size_t count = reference.size() - 1;
+    const size_t N = reference.size();
 
-    for (size_t i = 1; i < reference.size(); ++i) {
-        Eigen::Isometry3d ref_rel = reference[i-1].inverse() * reference[i];
-        Eigen::Isometry3d comp_rel = comparison[i-1].inverse() * comparison[i];
-        Eigen::Isometry3d error = ref_rel.inverse() * comp_rel;
+    // (Alg. 9, l. 7) Anchor is the last pose of the sub-trajectory
+    const Eigen::Isometry3d& P_Ga = reference.back();
+    const Eigen::Isometry3d& P_La = comparison.back();
 
-        double trans_error = error.translation().norm();
-        double rot_error = Eigen::AngleAxisd(error.linear()).angle();
-
-        total_trans += trans_error;
-        total_rot += rot_error;
-        max_trans = std::max(max_trans, trans_error);
-        max_rot = std::max(max_rot, rot_error);
+    // (Alg. 9, l. 13–14) Compute cumulative arc-length s_k
+    std::vector<double> s_vals(N, 0.0);
+    for (size_t i = 1; i < N; ++i) {
+        double ds = (reference[i].translation() - reference[i-1].translation()).norm();
+        s_vals[i] = s_vals[i-1] + ds;
+    }
+    double total_length = s_vals.back() - s_vals.front();
+    if (total_length <= 1e-9) {
+        return stats;
     }
 
-    stats.avg_trans = total_trans / static_cast<double>(count);
-    stats.avg_rot = total_rot / static_cast<double>(count);
+    auto relativeTransform = [](const Eigen::Isometry3d& A, const Eigen::Isometry3d& B) {
+        return A.inverse() * B;
+    };
+
+    // (Alg. 9, l. 17–18) SE(3) error definition
+    auto se3_error = [&](const Eigen::Isometry3d& P_Gk,
+                         const Eigen::Isometry3d& P_Lk) {
+        Eigen::Isometry3d ref_rel  = relativeTransform(P_Ga, P_Gk);
+        Eigen::Isometry3d comp_rel = relativeTransform(P_La, P_Lk);
+        return ref_rel.inverse() * comp_rel;
+    };
+
+    auto translationNorm = [](const Eigen::Isometry3d& T) {
+        return T.translation().norm();
+    };
+
+    auto rotationNorm = [](const Eigen::Isometry3d& T) {
+        Eigen::AngleAxisd aa(T.linear());
+        return std::abs(aa.angle());
+    };
+
+    double e_T = 0.0;
+    double e_R = 0.0;
+    double max_trans = 0.0;
+    double max_rot   = 0.0;
+
+    // (Alg. 9, l. 15–20) Loop over all segments with trapezoidal integration
+    for (size_t i = 0; i < N - 1; ++i) {
+        Eigen::Isometry3d E_k  = se3_error(reference[i], comparison[i]);
+        Eigen::Isometry3d E_k1 = se3_error(reference[i+1], comparison[i+1]);
+
+        double t_err_k  = translationNorm(E_k);
+        double t_err_k1 = translationNorm(E_k1);
+        double r_err_k  = rotationNorm(E_k);
+        double r_err_k1 = rotationNorm(E_k1);
+
+        double ds = s_vals[i+1] - s_vals[i];
+
+        // (Alg. 9, l. 19) Trapezoidal integration
+        e_T += ds * 0.5 * (t_err_k + t_err_k1);
+        e_R += ds * 0.5 * (r_err_k + r_err_k1);
+
+        // track maximum errors
+        max_trans = std::max({max_trans, t_err_k, t_err_k1});
+        max_rot   = std::max({max_rot, r_err_k, r_err_k1});
+    }
+
+    // (Alg. 9, l. 21) Normalize by total arc length
+    stats.avg_trans = e_T / total_length;
+    stats.avg_rot   = e_R / total_length;
     stats.max_trans = max_trans;
-    stats.max_rot = max_rot;
+    stats.max_rot   = max_rot;
+
     return stats;
 }
+
 
 }  // namespace ais_robot_localization
 
