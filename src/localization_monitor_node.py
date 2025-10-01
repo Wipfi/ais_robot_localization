@@ -58,7 +58,7 @@ class OdometryComparisonNode:
         self.ref_sub = rospy.Subscriber("/global_odom", Odometry, self.global_odom_callback)
         self.local_odom_sub = rospy.Subscriber("/local_odom", Odometry, self.local_odom_callback)
 
-        rospy.loginfo("OdometryComparisonNode initialized")
+        rospy.loginfo("OdometryComparisonNode initialized (PYTHON)")
 
     def global_odom_callback(self, msg):
         rospy.logdebug("Received message on local_odom topic")
