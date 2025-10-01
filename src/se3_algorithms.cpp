@@ -1,6 +1,7 @@
 #include "ais_robot_localization/se3_algorithms.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 namespace ais_robot_localization {
@@ -30,6 +31,34 @@ PoseStamped se3ToPoseStamped(const Eigen::Isometry3d& transform,
 double calculateEuclideanDistance(const Eigen::Isometry3d& pose1,
                                   const Eigen::Isometry3d& pose2) {
     return (pose2.translation() - pose1.translation()).norm();
+}
+
+std::vector<double> gaussianWeights(const std::vector<double>& errors,
+                                    double half_life) {
+    std::vector<double> weights;
+    weights.reserve(errors.size());
+
+    if (errors.empty()) {
+        return weights;
+    }
+
+    if (half_life <= 0.0) {
+        weights.assign(errors.size(), 1.0);
+        return weights;
+    }
+
+    double sigma = half_life / std::sqrt(2.0 * std::log(2.0));
+    if (!std::isfinite(sigma) || sigma <= 0.0) {
+        weights.assign(errors.size(), 1.0);
+        return weights;
+    }
+
+    for (double error : errors) {
+        double ratio = error / sigma;
+        weights.push_back(std::exp(-0.5 * ratio * ratio));
+    }
+
+    return weights;
 }
 
 void kabschAlgorithm(const std::vector<Eigen::Vector3d>& src,
