@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/dagobert/tedusar_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/dagobert/tedusar_ws/src/roboalm/ais_robot_localization/include/**",
+        "/home/dagobert/tedusar_ws/src/roboalm/direct_lidar_odometry/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

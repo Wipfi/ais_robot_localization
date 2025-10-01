@@ -67,7 +67,7 @@ class LocalizationMonitorNode {
     global_odom_sub_ = nh_.subscribe("/global_odom", 50, &LocalizationMonitorNode::globalOdomCallback, this);
     local_odom_sub_ = nh_.subscribe("/local_odom", 50, &LocalizationMonitorNode::localOdomCallback, this);
 
-    ROS_INFO("LocalizationMonitorNode initialized");
+    ROS_INFO("LocalizationMonitorNode initialized (CPP)");
   }
 
   void spin() const {
