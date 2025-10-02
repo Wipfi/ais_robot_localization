@@ -1,0 +1,5 @@
+alignment_filter:
+  ros__parameters:
+    publish_tf: true
+    global_frame: map
+    local_frame: odom
