@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <Eigen/Geometry>
+
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -36,6 +38,29 @@ Eigen::Isometry3d poseMsgToIsometry(const geometry_msgs::Pose& pose_msg) {
   Eigen::Vector3d position(pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
   Eigen::Quaterniond orientation = toEigenQuaternion(pose_msg.orientation);
   return odomToSE3(position, orientation);
+}
+
+double quaternionYaw(const Eigen::Quaterniond& q) {
+  return std::atan2(2.0 * (q.w() * q.z + q.x() * q.y), 1.0 - 2.0 * (q.y() * q.y + q.z() * q.z));
+}
+
+Eigen::Quaterniond yawOnlyQuaternion(const Eigen::Isometry3d& transform) {
+  double yaw = std::atan2(transform.linear()(1, 0), transform.linear()(0, 0));
+  return Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+}
+
+void enforce2DPose(geometry_msgs::Pose& pose) {
+  pose.position.z = 0.0;
+  Eigen::Quaterniond q = toEigenQuaternion(pose.orientation);
+  Eigen::Quaterniond yaw_quaternion(Eigen::AngleAxisd(quaternionYaw(q), Eigen::Vector3d::UnitZ()));
+  pose.orientation.x = yaw_quaternion.x();
+  pose.orientation.y = yaw_quaternion.y();
+  pose.orientation.z = yaw_quaternion.z();
+  pose.orientation.w = yaw_quaternion.w();
+}
+
+void enforce2DPoseStamped(geometry_msgs::PoseStamped& pose) {
+  enforce2DPose(pose.pose);
 }
 
 geometry_msgs::PoseStamped toRosPoseStamped(const PoseStamped& pose, const std::string& frame_id, const ros::Time& stamp) {
@@ -74,6 +99,7 @@ class AlignmentFilterNode {
       : nh_(),
         private_nh_("~"),
         publish_tf_(private_nh_.param("publish_tf", true)),
+        two_d_mode_(private_nh_.param("2d_mode", false)),
         tf_buffer_(),
         tf_listener_(nullptr),
         current_transform_(Eigen::Isometry3d::Identity()) {
@@ -111,8 +137,16 @@ class AlignmentFilterNode {
       local_frame_ = msg->pose_local.header.frame_id;
     }
 
-    global_path_.poses.push_back(msg->pose_global);
-    local_path_.poses.push_back(msg->pose_local);
+    geometry_msgs::PoseStamped global_pose = msg->pose_global;
+    geometry_msgs::PoseStamped local_pose = msg->pose_local;
+
+    if (two_d_mode_) {
+      enforce2DPoseStamped(global_pose);
+      enforce2DPoseStamped(local_pose);
+    }
+
+    global_path_.poses.push_back(global_pose);
+    local_path_.poses.push_back(local_pose);
 
     Eigen::Isometry3d global_pose = poseMsgToIsometry(msg->pose_global.pose);
     Eigen::Isometry3d local_pose = poseMsgToIsometry(msg->pose_local.pose);
@@ -158,6 +192,9 @@ class AlignmentFilterNode {
     transformed_msg = *msg;
     transformed_msg.header.frame_id = global_frame_;
     transformed_msg.pose.pose = toRosPose(transformed_pose);
+    if (two_d_mode_) {
+      enforce2DPose(transformed_msg.pose.pose);
+    }
     transformed_msg.pose.covariance = {
         1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
@@ -180,6 +217,9 @@ class AlignmentFilterNode {
       double stamp = (i < time_stamps.size()) ? time_stamps[i] : header.stamp.toSec();
       PoseStamped pose = se3ToPoseStamped(transformed_local[i], stamp, false);
       geometry_msgs::PoseStamped ros_pose = toRosPoseStamped(pose, global_frame_, ros::Time(stamp));
+      if (two_d_mode_) {
+        enforce2DPoseStamped(ros_pose);
+      }
       local_path_transformed_.poses.push_back(ros_pose);
     }
   }
@@ -212,6 +252,11 @@ class AlignmentFilterNode {
       q.normalize();
       Eigen::Vector3d t = current_transform_.translation();
 
+      if (two_d_mode_) {
+        q = yawOnlyQuaternion(current_transform_);
+        t.z() = 0.0;
+      }
+
       transform_msg.transform.translation.x = t.x();
       transform_msg.transform.translation.y = t.y();
       transform_msg.transform.translation.z = t.z();
@@ -229,6 +274,7 @@ class AlignmentFilterNode {
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
   bool publish_tf_;
+  bool two_d_mode_;
 
   ros::Publisher global_path_pub_;
   ros::Publisher local_path_transformed_pub_;
@@ -251,7 +297,6 @@ class AlignmentFilterNode {
 
   AlignmentFilter filter_;
   Eigen::Isometry3d current_transform_;
-
   std::mutex mutex_;
 };
 

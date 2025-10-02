@@ -1,0 +1,4 @@
+# Example configuration enabling 2D publishing for the alignment filter node.
+alignment_filter:
+  publish_tf: true
+  2d_mode: true
