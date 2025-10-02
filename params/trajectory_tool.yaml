@@ -1,0 +1,12 @@
+trajectory_tool:
+  ros__parameters:
+    target_topic: "odometry/filtered"
+    reference_topic: "ground_truth"
+    target_path_topic: "target_path"
+    reference_path_topic: "reference_path"
+    difference_path_topic: "trajectory_difference"
+    publish_reference_path: true
+    publish_difference_path: true
+    max_path_length: 0
+    sync_tolerance: 0.1
+    reference_buffer_duration: 5.0
