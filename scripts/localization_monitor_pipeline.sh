@@ -5,6 +5,18 @@ SESSION_NAME="ais_localization_pipeline"
 PIPELINE_WINDOW="pipeline"
 RVIZ_WINDOW="rviz"
 LAUNCH_ARGS=("$@")
+START_RVIZ=true
+
+for arg in "${LAUNCH_ARGS[@]}"; do
+  case "${arg}" in
+    start_rviz:=false|start_rviz:=False|start_rviz:=FALSE)
+      START_RVIZ=false
+      ;;
+    start_rviz:=true|start_rviz:=True|start_rviz:=TRUE)
+      START_RVIZ=true
+      ;;
+  esac
+done
 
 if ! command -v tmux >/dev/null 2>&1; then
   echo "tmux is required to run this script." >&2
@@ -25,11 +37,11 @@ pkg_prefix=$(ros2 pkg prefix robot_localization)
 pkg_share="${pkg_prefix}/share/robot_localization"
 rviz_config="${pkg_share}/config/MonitorAnalysis.rviz"
 
-if ! command -v rviz2 >/dev/null 2>&1; then
-  echo "rviz2 was not found in PATH. The pipeline will start without visualization." >&2
-  start_rviz=false
-else
-  start_rviz=true
+if [ "${START_RVIZ}" = true ]; then
+  if ! command -v rviz2 >/dev/null 2>&1; then
+    echo "rviz2 was not found in PATH. The pipeline will start without visualization." >&2
+    START_RVIZ=false
+  fi
 fi
 
 # Start tmux session with the pipeline launch
@@ -41,7 +53,7 @@ fi
 
 tmux set-option -t "${SESSION_NAME}" remain-on-exit on
 
-if [ "${start_rviz}" = true ] && [ -f "${rviz_config}" ]; then
+if [ "${START_RVIZ}" = true ] && [ -f "${rviz_config}" ]; then
   tmux new-window -t "${SESSION_NAME}" -n "${RVIZ_WINDOW}" "rviz2 -d ${rviz_config}"
 fi
 

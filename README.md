@@ -23,8 +23,8 @@ This fork adds ROS 2 ports of AIS-specific tools that were previously only avail
 ### Launch and scripting support
 
 - `localization_monitor.launch.py` starts the full AIS monitoring pipeline and exposes launch
-  arguments to toggle the navsat preprocessing, alignment filter, and navsat transform stages or to
-  remap the involved topics.
+  arguments to toggle the navsat preprocessing, alignment filter, navsat transform stages, or RViz
+  as well as to remap the involved topics.
 - `localization_monitor_node.launch.py`, `alignment_filter.launch.py`, and
   `navsat_preprocessing.launch.py` provide component-level launch files for targeted debugging or
   integration into larger applications.
@@ -33,6 +33,7 @@ This fork adds ROS 2 ports of AIS-specific tools that were previously only avail
   custom YAML files.
 - `scripts/localization_monitor_pipeline.sh` mirrors the ROS 1 byobu helpers by creating a tmux
   session that launches the pipeline (with optional arguments) and opens RViz with the
-  `config/MonitorAnalysis.rviz` layout when available. A focused configuration for alignment
-  debugging lives in `config/AlignmentFilter.rviz`.
+  `config/MonitorAnalysis.rviz` layout when available. Pass `start_rviz:=false` if you want to skip
+  the visualization window. A focused configuration for alignment debugging lives in
+  `config/AlignmentFilter.rviz`.
 

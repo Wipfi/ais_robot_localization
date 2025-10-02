@@ -34,6 +34,7 @@ def generate_launch_description() -> LaunchDescription:
     start_navsat_preprocessing = LaunchConfiguration('start_navsat_preprocessing')
     start_alignment_filter = LaunchConfiguration('start_alignment_filter')
     start_navsat_transform = LaunchConfiguration('start_navsat_transform')
+    start_rviz = LaunchConfiguration('start_rviz')
 
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time', default_value='false',
@@ -146,6 +147,10 @@ def generate_launch_description() -> LaunchDescription:
         'start_navsat_transform',
         default_value='true',
         description='Start the navsat_transform_node as part of the pipeline.')
+    declare_start_rviz = DeclareLaunchArgument(
+        'start_rviz',
+        default_value='true',
+        description='Request RViz to start when using the pipeline helper script.')
 
     localization_monitor = Node(
         package='robot_localization',
@@ -239,6 +244,7 @@ def generate_launch_description() -> LaunchDescription:
         declare_start_navsat_preprocessing,
         declare_start_alignment_filter,
         declare_start_navsat_transform,
+        declare_start_rviz,
         localization_monitor,
         navsat_preprocessing,
         alignment_filter,
