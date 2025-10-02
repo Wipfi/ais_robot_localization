@@ -23,6 +23,9 @@ PoseStamped se3ToPoseStamped(const Eigen::Isometry3d& transform,
 double calculateEuclideanDistance(const Eigen::Isometry3d& pose1,
                                   const Eigen::Isometry3d& pose2);
 
+std::vector<double> gaussianWeights(const std::vector<double>& errors,
+                                    double half_life);
+
 void kabschAlgorithm(const std::vector<Eigen::Vector3d>& src,
                      const std::vector<Eigen::Vector3d>& dst,
                      Eigen::Matrix3d& rotation,

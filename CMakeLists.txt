@@ -104,6 +104,7 @@ catkin_package(
     ukf
     ukf_localization_nodelet
     localization_monitor
+    se3_algorithms
   CATKIN_DEPENDS
     angles
     cmake_modules
@@ -153,7 +154,8 @@ add_library(navsat_transform src/navsat_transform.cpp)
 add_library(ekf_localization_nodelet src/ekf_localization_nodelet.cpp)
 add_library(ukf_localization_nodelet src/ukf_localization_nodelet.cpp)
 add_library(navsat_transform_nodelet src/navsat_transform_nodelet.cpp)
-add_library(localization_monitor src/localization_monitor.cpp src/se3_algorithms.cpp)
+add_library(se3_algorithms src/se3_algorithms.cpp src/alignment_filter.cpp)
+add_library(localization_monitor src/localization_monitor.cpp)
 
 # Executables
 add_executable(ekf_localization_node src/ekf_localization_node.cpp)
@@ -161,12 +163,14 @@ add_executable(ukf_localization_node src/ukf_localization_node.cpp)
 add_executable(navsat_transform_node src/navsat_transform_node.cpp)
 add_executable(robot_localization_listener_node src/robot_localization_listener_node.cpp)
 add_executable(localization_monitor_node src/localization_monitor_node.cpp)
+add_executable(alignment_filter_node src/alignment_filter_node.cpp)
 
 # Dependencies
 add_dependencies(filter_base ${PROJECT_NAME}_gencpp)
 add_dependencies(navsat_transform ${PROJECT_NAME}_gencpp)
 add_dependencies(robot_localization_listener_node ${PROJECT_NAME}_gencpp)
 add_dependencies(localization_monitor_node ${PROJECT_NAME}_gencpp)
+add_dependencies(alignment_filter_node ${PROJECT_NAME}_gencpp)
 
 # Linking
 target_link_libraries(ros_filter_utilities ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
@@ -186,8 +190,10 @@ target_link_libraries(ukf_localization_nodelet ros_filter ${catkin_LIBRARIES})
 target_link_libraries(navsat_transform filter_utilities ros_filter_utilities ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(navsat_transform_node navsat_transform ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
 target_link_libraries(navsat_transform_nodelet navsat_transform ${catkin_LIBRARIES} ${GeographicLib_LIBRARIES})
-target_link_libraries(localization_monitor ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
+target_link_libraries(se3_algorithms ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
+target_link_libraries(localization_monitor se3_algorithms ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
 target_link_libraries(localization_monitor_node localization_monitor ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
+target_link_libraries(alignment_filter_node se3_algorithms ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
 
 #############
 ## Install ##
@@ -208,6 +214,7 @@ install(TARGETS
   ukf
   ukf_localization_nodelet
   localization_monitor
+  se3_algorithms
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
@@ -218,6 +225,7 @@ install(TARGETS
   robot_localization_listener_node
   ukf_localization_node
   localization_monitor_node
+  alignment_filter_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark cpp header files for installation
