@@ -1,0 +1,12 @@
+alignment_filter:
+  ros__parameters:
+    reference_topic: "map_odometry"
+    subject_topic: "odometry/filtered"
+    aligned_topic: "odometry/aligned"
+    transform_topic: "alignment_transform"
+    fixed_frame_id: "map"
+    moving_frame_id: "odom"
+    publish_tf: true
+    publish_transform_topic: false
+    publish_aligned_odometry: true
+    timeout: 1.0

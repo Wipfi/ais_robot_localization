@@ -15,8 +15,10 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(geographic_msgs REQUIRED)
@@ -97,6 +99,28 @@ add_executable(
   src/robot_localization_listener_node.cpp
 )
 
+add_library(
+  localization_monitor
+  SHARED
+  src/localization_monitor.cpp
+)
+
+add_library(
+  alignment_filter
+  SHARED
+  src/alignment_filter.cpp
+)
+
+add_executable(
+  localization_monitor_node
+  src/localization_monitor_node.cpp
+)
+
+add_executable(
+  alignment_filter_node
+  src/alignment_filter_node.cpp
+)
+
 target_link_libraries(
   ${library_name}
   ${GeographicLib_LIBRARIES}
@@ -162,6 +186,52 @@ ament_target_dependencies(
   robot_localization_listener_node
   rclcpp
 )
+
+ament_target_dependencies(
+  localization_monitor
+  diagnostic_msgs
+  geometry_msgs
+  nav_msgs
+  rclcpp
+  rclcpp_components
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+)
+
+ament_target_dependencies(
+  alignment_filter
+  geometry_msgs
+  nav_msgs
+  rclcpp
+  rclcpp_components
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+)
+
+target_link_libraries(
+  localization_monitor_node
+  localization_monitor
+)
+
+target_link_libraries(
+  alignment_filter_node
+  alignment_filter
+)
+
+ament_target_dependencies(
+  localization_monitor_node
+  rclcpp
+)
+
+ament_target_dependencies(
+  alignment_filter_node
+  rclcpp
+)
+
+rclcpp_components_register_node(localization_monitor "robot_localization::LocalizationMonitor")
+rclcpp_components_register_node(alignment_filter "robot_localization::AlignmentFilter")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -288,6 +358,21 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   )
 
+  add_launch_test(
+    test/test_localization_monitor.launch.py
+    TARGET test_localization_monitor
+  )
+
+  add_launch_test(
+    test/test_alignment_filter.launch.py
+    TARGET test_alignment_filter
+  )
+
+  add_launch_test(
+    test/test_trajectory_tool.launch.py
+    TARGET test_trajectory_tool
+  )
+
   ament_cppcheck(LANGUAGE "c++")
   ament_cpplint()
   ament_lint_cmake()
@@ -328,10 +413,12 @@ install(
   ekf_node
   ukf_node
   robot_localization_listener_node
+  localization_monitor_node
+  alignment_filter_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} localization_monitor alignment_filter
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -350,7 +437,15 @@ install(DIRECTORY
   USE_SOURCE_PERMISSIONS
 )
 
+ament_python_install_package(TrajectoryTools)
+
+install(PROGRAMS
+  TrajectoryTools/trajectory_tool.py
+  TrajectoryTools/TrajectoryPlayer.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name} localization_monitor alignment_filter)
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

@@ -1,0 +1,11 @@
+localization_monitor:
+  ros__parameters:
+    target_topic: "odometry/filtered"
+    reference_topic: "ground_truth"
+    monitor_frequency: 5.0
+    position_tolerance: 0.5
+    orientation_tolerance: 0.261799
+    linear_velocity_tolerance: 0.5
+    angular_velocity_tolerance: 0.523599
+    timeout: 1.0
+    publish_diagnostics: true
