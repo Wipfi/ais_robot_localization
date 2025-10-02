@@ -1,0 +1,9 @@
+localization_monitor:
+  ros__parameters:
+    dist_cum_threshold: 15.0
+    publish_rate: 0.5
+    max_poses_threshold: 500
+    time_based: false
+    publish_gnss_with_scaled_covariance: false
+    global_frame: map
+    local_frame: odom

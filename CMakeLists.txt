@@ -41,6 +41,7 @@ find_package(GeographicLib REQUIRED)
 set(library_name rl_lib)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/LocalizationMonitorResult.msg"
   "srv/FromLL.srv"
   "srv/GetState.srv"
   "srv/SetDatum.srv"
@@ -68,8 +69,11 @@ add_library(
   src/ukf.cpp
   src/filter_base.cpp
   src/filter_utilities.cpp
+  src/alignment_filter.cpp
+  src/localization_monitor.cpp
   src/navsat_transform.cpp
   src/robot_localization_estimator.cpp
+  src/se3_algorithms.cpp
   src/ros_filter.cpp
   src/ros_filter_utilities.cpp
   src/ros_robot_localization_listener.cpp)
@@ -95,6 +99,16 @@ add_executable(
 add_executable(
   robot_localization_listener_node
   src/robot_localization_listener_node.cpp
+)
+
+add_executable(
+  localization_monitor_node
+  src/localization_monitor_node.cpp
+)
+
+add_executable(
+  alignment_filter_node
+  src/alignment_filter_node.cpp
 )
 
 target_link_libraries(
@@ -162,6 +176,42 @@ ament_target_dependencies(
   robot_localization_listener_node
   rclcpp
 )
+
+target_link_libraries(
+  localization_monitor_node
+  ${library_name}
+)
+
+ament_target_dependencies(
+  localization_monitor_node
+  geometry_msgs
+  nav_msgs
+  rclcpp
+  std_msgs
+  tf2
+  tf2_ros
+)
+
+target_link_libraries(
+  alignment_filter_node
+  ${library_name}
+)
+
+ament_target_dependencies(
+  alignment_filter_node
+  geometry_msgs
+  nav_msgs
+  rclcpp
+  std_msgs
+  tf2
+  tf2_ros
+)
+
+rosidl_target_interfaces(localization_monitor_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+rosidl_target_interfaces(alignment_filter_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -328,6 +378,8 @@ install(
   ekf_node
   ukf_node
   robot_localization_listener_node
+  localization_monitor_node
+  alignment_filter_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -346,8 +398,16 @@ install(DIRECTORY
 install(DIRECTORY
   params
   launch
+  config
+  py_tools
   DESTINATION share/${PROJECT_NAME}
   USE_SOURCE_PERMISSIONS
+)
+
+install(PROGRAMS
+  scripts/navsat_preprocessing_node.py
+  scripts/localization_monitor_pipeline.sh
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_export_include_directories(include)
