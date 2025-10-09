@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import numpy as np
+if not hasattr(np, "float"):
+    np.float = float
+if not hasattr(np, "int"):
+    np.int = int
+
 
 from typing import Optional, Sequence
 
@@ -11,7 +17,10 @@ from geometry_msgs.msg import Quaternion, QuaternionStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 
-import tf_transformations as tf_trans
+import numpy as np
+import transforms3d.quaternions as quat
+
+
 
 
 class NavsatPreprocessingNode(Node):
@@ -20,7 +29,17 @@ class NavsatPreprocessingNode(Node):
     def __init__(self) -> None:
         super().__init__('navsat_preprocessing_node')
         self.get_logger().info('Initializing navsat preprocessing node...')
-        self.declare_parameter('use_sim_time', False)
+
+        if not self.has_parameter("use_sim_time"):
+            self.declare_parameter("use_sim_time", False)
+
+        self.use_sim_time = self.get_parameter("use_sim_time").get_parameter_value().bool_value
+
+        # Offset-Quaternion aus Parametern (ROS-Format [x,y,z,w])
+        self.q_off = self.declare_parameter(
+            "quat_offset", [0.0, 0.0, 0.0, 1.0]  # Default = Identität
+        ).value
+
 
         self.base_link_frame = self.declare_parameter('base_link_frame', 'base_link').value
         self.use_external_heading = self.declare_parameter('use_external_heading', True).value
@@ -28,7 +47,9 @@ class NavsatPreprocessingNode(Node):
             'calculate_heading_from_trajectory', False).value
         self.overwrite_covariance_matrix = self.declare_parameter(
             'overwrite_covariance_matrix', False).value
-        self.heading_reference_length = float(self.declare_parameter('heading_reference_length', 10).value)
+        param = self.declare_parameter('heading_reference_length', 10.0)
+        self.heading_reference_length = float(param.value)
+
         self.publish_imu_message_with_orientation = self.declare_parameter(
             'publish_imu_message_with_orientation', False).value
 
@@ -82,15 +103,70 @@ class NavsatPreprocessingNode(Node):
         if self.publish_imu_message_with_orientation and self.imu_pub is not None:
             self.publish_imu_with_orientation()
 
-    def apply_static_transform(self, quaternion: Quaternion) -> Quaternion:
-        rotation_matrix = tf_trans.quaternion_matrix(
-            [quaternion.x, quaternion.y, quaternion.z, quaternion.w])
+    
+    def quat_to_mat4(self, q: Quaternion) -> np.ndarray:
+        """Convert ROS Quaternion [x,y,z,w] to 4x4 rotation matrix."""
+        x, y, z, w = q.x, q.y, q.z, q.w
+        n = x*x + y*y + z*z + w*w
+        if n < 1e-16:
+            return np.eye(4)
+        s = 2.0 / n
+        xx, yy, zz = x*x*s, y*y*s, z*z*s
+        xy, xz, yz = x*y*s, x*z*s, y*z*s
+        wx, wy, wz = w*x*s, w*y*s, w*z*s
+        R = np.array([
+            [1.0 - (yy + zz), xy - wz,       xz + wy,       0.0],
+            [xy + wz,         1.0 - (xx + zz), yz - wx,     0.0],
+            [xz - wy,         yz + wx,       1.0 - (xx + yy), 0.0],
+            [0.0,             0.0,           0.0,           1.0],
+        ])
+        return R
+    
+    def mat4_to_quat(self, M: np.ndarray) -> Quaternion:
+        """Convert 4x4 (or 3x3) rotation matrix to ROS Quaternion [x,y,z,w]."""
+        m = M[:3, :3]
+        tr = np.trace(m)
+        if tr > 0.0:
+            S = np.sqrt(tr + 1.0) * 2.0
+            w = 0.25 * S
+            x = (m[2,1] - m[1,2]) / S
+            y = (m[0,2] - m[2,0]) / S
+            z = (m[1,0] - m[0,1]) / S
+        elif (m[0,0] > m[1,1]) and (m[0,0] > m[2,2]):
+            S = np.sqrt(1.0 + m[0,0] - m[1,1] - m[2,2]) * 2.0
+            w = (m[2,1] - m[1,2]) / S
+            x = 0.25 * S
+            y = (m[0,1] + m[1,0]) / S
+            z = (m[0,2] + m[2,0]) / S
+        elif m[1,1] > m[2,2]:
+            S = np.sqrt(1.0 + m[1,1] - m[0,0] - m[2,2]) * 2.0
+            w = (m[0,2] - m[2,0]) / S
+            x = (m[0,1] + m[1,0]) / S
+            y = 0.25 * S
+            z = (m[1,2] + m[2,1]) / S
+        else:
+            S = np.sqrt(1.0 + m[2,2] - m[0,0] - m[1,1]) * 2.0
+            w = (m[1,0] - m[0,1]) / S
+            x = (m[0,2] + m[2,0]) / S
+            y = (m[1,2] + m[2,1]) / S
+            z = 0.25 * S
+        return Quaternion(x=float(x), y=float(y), z=float(z), w=float(w))
 
-        local_z_rotation = tf_trans.quaternion_matrix([0.0, 0.0, 0.0, 1.0])
-        rotated_matrix = tf_trans.concatenate_matrices(rotation_matrix, local_z_rotation)
-        rotated_quaternion = tf_trans.quaternion_from_matrix(rotated_matrix)
-        return Quaternion(x=rotated_quaternion[0], y=rotated_quaternion[1],
-                          z=rotated_quaternion[2], w=rotated_quaternion[3])
+
+    def apply_static_transform(self, quaternion: Quaternion) -> Quaternion:
+        # Eingangs-Quaternion → Matrix
+        R_in = self.quat_to_mat4(quaternion)
+
+        q_off_ros = Quaternion(x=self.q_off[0], y=self.q_off[1], z=self.q_off[2], w=self.q_off[3])
+        R_off = self.quat_to_mat4(q_off_ros)
+
+        # Multiplizieren (lokale Rotation)
+        R_new = np.dot(R_in, R_off)
+
+        # Matrix zurück → Quaternion
+        return self.mat4_to_quat(R_new)
+
+
 
     def publish_odom_with_pose_and_covariance(self) -> None:
         if self.latest_odom is None or self.latest_orientation is None:
