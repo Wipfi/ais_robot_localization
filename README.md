@@ -37,6 +37,38 @@ This fork adds ROS 2 ports of AIS-specific tools that were previously only avail
   the visualization window. A focused configuration for alignment debugging lives in
   `config/AlignmentFilter.rviz`.
 
+### Alignment filter 2D projection mode
+
+The alignment filter exposes a `2D_mode` parameter that projects the estimated global transform,
+aligned odometry, and transformed local trajectory onto the XY plane. When enabled, all published
+poses use zero altitude and yaw-only orientation (roll and pitch are forced to zero). The parameter
+defaults to `false` to preserve the original 3D behavior.
+
+To enable the mode when using the bundled pipeline or launch files, override the alignment filter
+parameters, for example:
+
+```bash
+ros2 launch ais_robot_localization localization_monitor.launch.py use_alignment_filter:=true \
+  alignment_filter_params:=/path/to/custom_alignment_filter.yaml
+```
+
+With a custom parameter file containing:
+
+```yaml
+alignment_filter:
+  ros__parameters:
+    2D_mode: true
+```
+
+Alternatively, you can set the parameter directly when launching the standalone alignment filter:
+
+```bash
+ros2 launch ais_robot_localization alignment_filter.launch.py alignment_filter.2D_mode:=true
+```
+
+Both approaches will make the alignment filter publish planar transforms while the rest of the
+pipeline remains unchanged.
+
 
 - `py_tools/TrajectoryTools` contains the AIS trajectory generator, player, and helper notebooks.
   The `TrajectoryPlayer.py` script now uses ROS 2 (`rclpy`) publishers and TF broadcasters so you can
