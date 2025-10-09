@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include <Eigen/Geometry>
+
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
@@ -38,6 +40,26 @@ Eigen::Quaterniond toEigenQuaternion(const geometry_msgs::msg::Quaternion & q_ms
   }
   q.normalize();
   return q;
+}
+
+Eigen::Isometry3d projectToXYPlane(const Eigen::Isometry3d & transform)
+{
+  Eigen::Isometry3d projected = Eigen::Isometry3d::Identity();
+  projected.translation().x() = transform.translation().x();
+  projected.translation().y() = transform.translation().y();
+  projected.translation().z() = 0.0;
+
+  const Eigen::Matrix3d & rotation = transform.linear();
+  double yaw = std::atan2(rotation(1, 0), rotation(0, 0));
+  projected.linear() = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+  return projected;
+}
+
+void projectTrajectoryToXYPlane(std::vector<Eigen::Isometry3d> & trajectory)
+{
+  for (auto & pose : trajectory) {
+    pose = projectToXYPlane(pose);
+  }
 }
 
 Eigen::Isometry3d poseMsgToIsometry(const geometry_msgs::msg::Pose & pose_msg)
@@ -93,6 +115,7 @@ public:
   AlignmentFilterNode()
   : rclcpp::Node("alignment_filter_node"),
     publish_tf_(this->declare_parameter("publish_tf", true)),
+    two_d_mode_(this->declare_parameter("2D_mode", false)),
     current_transform_(Eigen::Isometry3d::Identity())
   {
     global_frame_ = this->declare_parameter<std::string>("global_frame", "map");
@@ -164,7 +187,11 @@ private:
     if (filter_.hasSufficientData()) {
       AlignmentResult result;
       if (filter_.computeAlignment(result)) {
-        current_transform_ = result.transform;
+        Eigen::Isometry3d transform_to_use = two_d_mode_ ? projectToXYPlane(result.transform) : result.transform;
+        if (two_d_mode_) {
+          projectTrajectoryToXYPlane(result.transformed_local);
+        }
+        current_transform_ = transform_to_use;
         updateTransformedPath(result.transformed_local, filter_.timestamps(), msg->pose_global.header);
         publishPaths();
       }
@@ -179,6 +206,9 @@ private:
     Eigen::Quaterniond orientation = toEigenQuaternion(msg->pose.pose.orientation);
     Eigen::Isometry3d current_pose = odomToSE3(position, orientation);
     Eigen::Isometry3d transformed_pose = current_transform_ * current_pose;
+    if (two_d_mode_) {
+      transformed_pose = projectToXYPlane(transformed_pose);
+    }
 
     auto transformed_msg = *msg;
     transformed_msg.header.frame_id = global_frame_;
@@ -206,7 +236,7 @@ private:
 
     for (std::size_t i = 0; i < transformed_local.size(); ++i) {
       double stamp = (i < time_stamps.size()) ? time_stamps[i] : rclcpp::Time(header.stamp).seconds();
-      PoseStamped pose = se3ToPoseStamped(transformed_local[i], stamp, false);
+      PoseStamped pose = se3ToPoseStamped(transformed_local[i], stamp, two_d_mode_);
       local_path_transformed_.poses.push_back(
         toRosPoseStamped(pose, global_frame_, secondsToTime(stamp)));
     }
@@ -256,6 +286,7 @@ private:
   }
 
   bool publish_tf_;
+  bool two_d_mode_;
 
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr local_path_transformed_pub_;
