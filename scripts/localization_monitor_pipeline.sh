@@ -37,7 +37,7 @@ fi
 
 pkg_prefix=$(ros2 pkg prefix robot_localization)
 pkg_share="${pkg_prefix}/share/robot_localization"
-rviz_config="${pkg_share}/config/MonitorAnalysis.rviz"
+rviz_config="${pkg_share}/config/AlignmentFilter.rviz"
 
 if [ "${START_RVIZ}" = true ]; then
   if ! command -v rviz2 >/dev/null 2>&1; then
