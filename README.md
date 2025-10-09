@@ -36,8 +36,11 @@ This fork adds ROS 2 ports of AIS-specific tools that were previously only avail
   `config/MonitorAnalysis.rviz` layout when available. Pass `start_rviz:=false` if you want to skip
   the visualization window. A focused configuration for alignment debugging lives in
   `config/AlignmentFilter.rviz`.
+
+
 - `py_tools/TrajectoryTools` contains the AIS trajectory generator, player, and helper notebooks.
   The `TrajectoryPlayer.py` script now uses ROS 2 (`rclpy`) publishers and TF broadcasters so you can
   replay dill-based paths directly into Humble environments while visualizing them with the bundled
   Matplotlib UI.
+
 
