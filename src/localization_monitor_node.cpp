@@ -15,7 +15,7 @@
 
 #include "ais_robot_localization/localization_monitor.hpp"
 #include "ais_robot_localization/se3_algorithms.hpp"
-#include "robot_localization/msg/localization_monitor_result.hpp"
+#include "ais_robot_localization/msg/localization_monitor_result.hpp"
 
 namespace ais_robot_localization
 {
@@ -83,7 +83,7 @@ public:
     global_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("global_odom_path", 10);
     local_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("local_odom_path", 10);
     localization_result_pub_ =
-      this->create_publisher<robot_localization::msg::LocalizationMonitorResult>(
+      this->create_publisher<ais_robot_localization::msg::LocalizationMonitorResult>(
       "localization_result", 10);
     gnss_with_scaled_covariance_pub_ =
       this->create_publisher<nav_msgs::msg::Odometry>("gnss_with_scaled_covariance", 10);
@@ -261,7 +261,7 @@ private:
     PoseStamped global_pose = se3ToPoseStamped(global_poses_[index], local_times_[index], false);
     PoseStamped local_pose = se3ToPoseStamped(local_poses_[index], local_times_[index], false);
 
-    robot_localization::msg::LocalizationMonitorResult result;
+    ais_robot_localization::msg::LocalizationMonitorResult result;
     result.float_array = feature_msg.data;
     auto result_stamp = secondsToTime(local_times_[index]);
     result.pose_global =
@@ -276,7 +276,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr feature_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr local_path_pub_;
-  rclcpp::Publisher<robot_localization::msg::LocalizationMonitorResult>::SharedPtr
+  rclcpp::Publisher<ais_robot_localization::msg::LocalizationMonitorResult>::SharedPtr
     localization_result_pub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr gnss_with_scaled_covariance_pub_;
 

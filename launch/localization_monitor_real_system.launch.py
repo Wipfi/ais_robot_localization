@@ -42,7 +42,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_monitor_params = DeclareLaunchArgument(
         'monitor_params',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'localization_monitor.yaml',
         ]),
@@ -50,7 +50,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_alignment_params = DeclareLaunchArgument(
         'alignment_params',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'alignment_filter.yaml',
         ]),
@@ -58,7 +58,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_navsat_params = DeclareLaunchArgument(
         'navsat_params',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'navsat_preprocessing.yaml',
         ]),
@@ -66,7 +66,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_navsat_transform_params = DeclareLaunchArgument(
         'navsat_transform_params',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'navsat_transform.yaml',
         ]),
@@ -153,7 +153,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Request RViz to start when using the pipeline helper script.')
 
     localization_monitor = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='localization_monitor_node',
         name='localization_monitor',
         output='screen',
@@ -170,7 +170,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     alignment_filter = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='alignment_filter_node',
         name='alignment_filter',
         output='screen',
@@ -186,7 +186,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     navsat_preprocessing = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='navsat_preprocessing_node.py',
         name='navsat_preprocessing',
         output='screen',
@@ -204,7 +204,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     navsat_transform = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='navsat_transform_node',
         name='navsat_transform_node',
         output='screen',

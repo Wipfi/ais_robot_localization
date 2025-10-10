@@ -22,7 +22,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_params = DeclareLaunchArgument(
         'params_file',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'localization_monitor.yaml',
         ]),
@@ -57,7 +57,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Output topic for the GNSS message with scaled covariance.')
 
     localization_monitor = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='localization_monitor_node',
         name='localization_monitor',
         output='screen',

@@ -25,7 +25,7 @@
 
 #include "ais_robot_localization/alignment_filter.hpp"
 #include "ais_robot_localization/se3_algorithms.hpp"
-#include "robot_localization/msg/localization_monitor_result.hpp"
+#include "ais_robot_localization/msg/localization_monitor_result.hpp"
 
 namespace ais_robot_localization
 {
@@ -126,7 +126,7 @@ public:
       this->create_publisher<nav_msgs::msg::Path>("alignment_local_path_transformed", 10);
     odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("alignment_odometry", 10);
 
-    localization_result_sub_ = this->create_subscription<robot_localization::msg::LocalizationMonitorResult>(
+    localization_result_sub_ = this->create_subscription<ais_robot_localization::msg::LocalizationMonitorResult>(
       "localization_result", 50,
       std::bind(&AlignmentFilterNode::localizationMonitorCallback, this, std::placeholders::_1));
     local_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
@@ -147,7 +147,7 @@ public:
 
 private:
   void localizationMonitorCallback(
-    const robot_localization::msg::LocalizationMonitorResult::SharedPtr msg)
+    const ais_robot_localization::msg::LocalizationMonitorResult::SharedPtr msg)
   {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -292,7 +292,7 @@ private:
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr local_path_transformed_pub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
-  rclcpp::Subscription<robot_localization::msg::LocalizationMonitorResult>::SharedPtr
+  rclcpp::Subscription<ais_robot_localization::msg::LocalizationMonitorResult>::SharedPtr
     localization_result_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr local_odom_sub_;
 
