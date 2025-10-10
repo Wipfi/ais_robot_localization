@@ -26,10 +26,10 @@ from launch.actions import DeclareLaunchArgument
 def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='robot_localization',
+            package='ais_robot_localization',
             executable='ekf_node',
             name='ekf_filter_node',
             output='screen',
-            parameters=[os.path.join(get_package_share_directory("robot_localization"), 'params', 'ekf.yaml')],
+            parameters=[os.path.join(get_package_share_directory("ais_robot_localization"), 'params', 'ekf.yaml')],
            ),
 ])

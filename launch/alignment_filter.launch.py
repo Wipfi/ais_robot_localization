@@ -20,7 +20,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_params = DeclareLaunchArgument(
         'params_file',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'alignment_filter.yaml',
         ]),
@@ -47,7 +47,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Output topic for the transformed local path.')
 
     alignment_filter = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='alignment_filter_node',
         name='alignment_filter',
         output='screen',

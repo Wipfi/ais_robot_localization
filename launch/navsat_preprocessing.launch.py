@@ -19,7 +19,7 @@ def generate_launch_description() -> LaunchDescription:
     declare_params_file = DeclareLaunchArgument(
         'params_file',
         default_value=PathJoinSubstitution([
-            FindPackageShare('robot_localization'),
+            FindPackageShare('ais_robot_localization'),
             'params',
             'navsat_preprocessing.yaml',
         ]),
@@ -42,7 +42,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Optional IMU topic with the corrected orientation.')
 
     navsat_preprocessing = Node(
-        package='robot_localization',
+        package='ais_robot_localization',
         executable='navsat_preprocessing_node.py',
         name='navsat_preprocessing',
         output='screen',

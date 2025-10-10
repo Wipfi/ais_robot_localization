@@ -18,13 +18,13 @@ import os
 
 def generate_launch_description():
     params_file = os.path.join(
-        get_package_share_directory('robot_localization'),
+        get_package_share_directory('ais_robot_localization'),
         'params',
         'ekf_local_mercator.yaml')
 
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='robot_localization',
+            package='ais_robot_localization',
             executable='ekf_node',
             name='ekf_se_odom',
             output='screen',

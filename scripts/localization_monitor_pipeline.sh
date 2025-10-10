@@ -35,8 +35,8 @@ if byobu-tmux has-session -t "${SESSION_NAME}" 2>/dev/null; then
   exit 1
 fi
 
-pkg_prefix=$(ros2 pkg prefix robot_localization)
-pkg_share="${pkg_prefix}/share/robot_localization"
+pkg_prefix=$(ros2 pkg prefix ais_robot_localization)
+pkg_share="${pkg_prefix}/share/ais_robot_localization"
 rviz_config="${pkg_share}/config/AlignmentFilter.rviz"
 
 if [ "${START_RVIZ}" = true ]; then
@@ -50,10 +50,10 @@ fi
 # Window 1: pipeline launch
 if [ ${#LAUNCH_ARGS[@]} -gt 0 ]; then
   byobu-tmux new-session -d -s "${SESSION_NAME}" -n "${PIPELINE_WINDOW}" \
-    "ros2 launch robot_localization localization_monitor.launch.py ${LAUNCH_ARGS[*]}"
+    "ros2 launch ais_robot_localization localization_monitor.launch.py ${LAUNCH_ARGS[*]}"
 else
   byobu-tmux new-session -d -s "${SESSION_NAME}" -n "${PIPELINE_WINDOW}" \
-    "ros2 launch robot_localization localization_monitor.launch.py"
+    "ros2 launch ais_robot_localization localization_monitor.launch.py"
 fi
 
 # Maus aktivieren
