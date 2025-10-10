@@ -107,7 +107,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Input odometry topic for navsat preprocessing and transform nodes.')
     declare_navsat_heading = DeclareLaunchArgument(
         'navsat_heading_topic',
-        default_value='navsat/orientation',
+        default_value='/navsat/heading',#'navsat/orientation',
         description='Heading topic for the navsat preprocessing node.')
     declare_navsat_output = DeclareLaunchArgument(
         'navsat_output_topic',
@@ -208,7 +208,7 @@ def generate_launch_description() -> LaunchDescription:
         executable='navsat_transform_node',
         name='navsat_transform_node',
         output='screen',
-        parameters=[navsat_transform_params, {'use_sim_time': use_sim_time}],
+        parameters=[navsat_transform_params, {'use_sim_time': use_sim_time}, {'use_odometry_yaw' : True}],
         remappings=[
             ('odometry/filtered', alignment_odom_topic),
             ('gps/fix', navsat_fix_topic),
