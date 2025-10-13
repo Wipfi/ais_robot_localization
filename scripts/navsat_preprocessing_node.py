@@ -37,7 +37,7 @@ class NavsatPreprocessingNode(Node):
 
         # Offset-Quaternion aus Parametern (ROS-Format [x,y,z,w])
         self.q_off = self.declare_parameter(
-            "quat_offset", [0.0, 0.0, 0.0, 1.0]  # Default = Identität [0.0, 0.0, 0.0, 1.0]
+            "quat_offset", [0.0, 0.0, 1.0, 0.0]  # Default = Identität [0.0, 0.0, 0.0, 1.0]
         ).value
 
 

@@ -21,7 +21,7 @@ def generate_launch_description() -> LaunchDescription:
     monitor_local_path_topic = LaunchConfiguration('monitor_local_path_topic')
     scaled_gps_topic = LaunchConfiguration('scaled_gps_topic')
 
-    navsat_input_topic = LaunchConfiguration('navsat_input_topic')
+    navsat_pre_input_topic = LaunchConfiguration('navsat_input_topic')
     navsat_heading_topic = LaunchConfiguration('navsat_heading_topic')
     navsat_output_topic = LaunchConfiguration('navsat_output_topic')
     navsat_imu_topic = LaunchConfiguration('navsat_imu_topic')
@@ -192,7 +192,7 @@ def generate_launch_description() -> LaunchDescription:
         output='screen',
         parameters=[navsat_params, {'use_sim_time': use_sim_time}],
         remappings=[
-            ('localization/preprocessing/input/gps_odometry', navsat_input_topic),
+            ('localization/preprocessing/input/gps_odometry', navsat_pre_input_topic),
             (
                 'localization/preprocessing/input/orientation_with_global_heading',
                 navsat_heading_topic,
@@ -208,13 +208,12 @@ def generate_launch_description() -> LaunchDescription:
         executable='navsat_transform_node',
         name='navsat_transform_node',
         output='screen',
-        parameters=[navsat_transform_params, {'use_sim_time': use_sim_time}, {'use_odometry_yaw' : True}],
+        parameters=[navsat_transform_params, {'use_sim_time': use_sim_time}, {'use_odometry_yaw' : True}, {'publish_filtered_gps': True}, {'broadcast_cartesian_transform': True}],
         remappings=[
             ('odometry/filtered', alignment_odom_topic),
             ('gps/fix', navsat_fix_topic),
-            ('odometry/gps', navsat_input_topic),
-            ('gps/filtered', navsat_output_topic),
-            ('imu/data', navsat_imu_topic),
+            ('odometry/gps', navsat_pre_input_topic),
+            ('gps/filtered', 'localization/navsat/filtered_gps'),
         ],
         condition=IfCondition(start_navsat_transform),
     )
