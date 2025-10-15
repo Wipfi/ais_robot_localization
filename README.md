@@ -22,6 +22,35 @@ This fork adds ROS 2 ports of AIS-specific tools that were previously only avail
 
 ### Launch and scripting support
 
+### Localization monitor overview
+
+The localization monitor subscribes to a locally integrated odometry stream (for example,
+`/odometry/local`) and a globally referenced solution (GNSS, motion capture, etc.). It synchronizes
+their pose histories, performs a point-to-point alignment, and periodically computes relative pose
+error statistics. The node publishes the aligned trajectories on the `Global_Path` and
+`Local_Path` topics so they can be inspected in RViz alongside the diagnostic messages.
+
+The `RPE_Values` topic carries a `std_msgs/msg/Float32MultiArray` with four entries that summarize
+the latest comparison window:
+
+1. Path-length-weighted translational error in meters. The monitor integrates the translational
+   residual along the synchronized trajectories (trapezoidal rule) over a sliding subtrajectory
+   window that ends at the newest synchronized sample. Dividing the integral by the traveled
+   distance in that window keeps the statistic independent of the chosen reference length while
+   still letting longer, better-populated segments influence the result more than short, noisy
+   samples.
+2. Path-length-weighted rotational error in radians, computed with the same integration scheme and
+   normalization over the same newest subtrajectory window. The value therefore remains independent
+   of the reference length yet emphasizes sustained orientation drift near the current time horizon
+   instead of treating each pose as an equal-weighted sample.
+3. Maximum translational error in meters, evaluated over the current comparison window by
+   measuring every pose in that window against the latest synchronized pose.
+4. Maximum rotational error in radians computed with the same newest-pose reference so the
+   bound reflects the worst current deviation instead of historical outliers.
+
+Values are set to `inf` when insufficient data is available (e.g., during startup) so downstream
+consumers can detect gaps.
+
 - `localization_monitor.launch.py` starts the full AIS monitoring pipeline and exposes launch
   arguments to toggle the navsat preprocessing, alignment filter, navsat transform stages, or RViz
   as well as to remap the involved topics.
@@ -36,6 +65,21 @@ This fork adds ROS 2 ports of AIS-specific tools that were previously only avail
   `config/MonitorAnalysis.rviz` layout when available. Pass `start_rviz:=false` if you want to skip
   the visualization window. A focused configuration for alignment debugging lives in
   `config/AlignmentFilter.rviz`.
+
+#### Example: `localization_monitor_node.launch.py`
+
+To launch only the localization monitor component without any preprocessing stages, invoke the
+dedicated launch file and supply the odometry topics expected by your system:
+
+```bash
+ros2 launch ais_robot_localization localization_monitor_node.launch.py \
+  localization_monitor.global_odom_topic:=/my/global/odometry \
+  localization_monitor.local_odom_topic:=/my/local/odometry \
+  localization_monitor.rpe_topic:=/localization_monitor/RPE_Values
+```
+
+Each argument remaps the parameters on the `localization_monitor_node` so you can point the
+diagnostics at custom odometry sources while keeping the rest of the pipeline disabled.
 
 ### Alignment filter 2D projection mode
 
