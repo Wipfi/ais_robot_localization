@@ -107,7 +107,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Input odometry topic for navsat preprocessing and transform nodes.')
     declare_navsat_heading = DeclareLaunchArgument(
         'navsat_heading_topic',
-        default_value='/navsat/heading',#'navsat/orientation',
+        default_value='navsat/orientation',
         description='Heading topic for the navsat preprocessing node.')
     declare_navsat_output = DeclareLaunchArgument(
         'navsat_output_topic',

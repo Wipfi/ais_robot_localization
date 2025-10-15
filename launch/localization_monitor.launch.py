@@ -9,7 +9,6 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description() -> LaunchDescription:
     use_sim_time = LaunchConfiguration('use_sim_time')
     monitor_params = LaunchConfiguration('monitor_params')
-    alignment_params = LaunchConfiguration('alignment_params')
     navsat_params = LaunchConfiguration('navsat_params')
     navsat_transform_params = LaunchConfiguration('navsat_transform_params')
 
@@ -28,13 +27,8 @@ def generate_launch_description() -> LaunchDescription:
     navsat_fix_topic = LaunchConfiguration('navsat_fix_topic')
 
     alignment_odom_topic = LaunchConfiguration('alignment_odom_topic')
-    alignment_global_path_topic = LaunchConfiguration('alignment_global_path_topic')
-    alignment_local_path_topic = LaunchConfiguration('alignment_local_path_topic')
-
     start_navsat_preprocessing = LaunchConfiguration('start_navsat_preprocessing')
-    start_alignment_filter = LaunchConfiguration('start_alignment_filter')
     start_navsat_transform = LaunchConfiguration('start_navsat_transform')
-    start_rviz = LaunchConfiguration('start_rviz')
 
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time', default_value='false',
@@ -103,11 +97,11 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_navsat_input = DeclareLaunchArgument(
         'navsat_input_topic',
-        default_value= '/odom_gnss',#'localization/navsat/odometry/gps',
+        default_value='localization/navsat/odometry/gps', #'/odom_gnss'
         description='Input odometry topic for navsat preprocessing and transform nodes.')
     declare_navsat_heading = DeclareLaunchArgument(
         'navsat_heading_topic',
-        default_value='/odom_gnss_orientation',#'navsat/orientation',
+        default_value='navsat/orientation',#'/odom_gnss_orientation',
         description='Heading topic for the navsat preprocessing node.')
     declare_navsat_output = DeclareLaunchArgument(
         'navsat_output_topic',
@@ -167,22 +161,6 @@ def generate_launch_description() -> LaunchDescription:
             ('RPE_Values', monitor_rpe_topic),
             ('gnss_with_scaled_covariance', scaled_gps_topic),
         ],
-    )
-
-    alignment_filter = Node(
-        package='ais_robot_localization',
-        executable='alignment_filter_node',
-        name='alignment_filter',
-        output='screen',
-        parameters=[alignment_params, {'use_sim_time': use_sim_time}],
-        remappings=[
-            ('local_odom', local_odom_topic),
-            ('localization_result', monitor_result_topic),
-            ('alignment_odometry', alignment_odom_topic),
-            ('alignment_global_path', alignment_global_path_topic),
-            ('alignment_local_path_transformed', alignment_local_path_topic),
-        ],
-        condition=IfCondition(start_alignment_filter),
     )
 
     navsat_preprocessing = Node(
@@ -247,6 +225,5 @@ def generate_launch_description() -> LaunchDescription:
         declare_start_rviz,
         localization_monitor,
         navsat_preprocessing,
-        alignment_filter,
         navsat_transform,
     ])
