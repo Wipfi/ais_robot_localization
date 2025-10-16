@@ -7,28 +7,26 @@ Please see documentation here: http://wiki.ros.org/robot_localization
 
 ## AIS extensions for ROS 2
 
-This fork adds ROS 2 ports of AIS-specific tools that were previously only available on the
-`noetic-devel` branch:
+This fork adds ROS 2 tools based on a Master Thesis (https://doi.org/10.3217/2eb04-1vk32):
 
 * **Localization monitor**: evaluates relative pose error (RPE) between a local odometry source
   and a global reference, publishes diagnostic statistics, and streams matching path markers.
 * **Alignment filter**: continuously aligns the local odometry frame to the global frame by running
   a Kabsch-based optimization over a sliding window of localization monitor samples and optionally
   publishes the transform as TF.
-* **NavSat preprocessing node**: fuses GNSS odometry with external heading estimates before feeding
-  them into the filters and optionally emits an IMU message with the corrected orientation.
-* **Launch and visualization assets**: a turnkey launch file to start the full monitoring pipeline
-  in ROS 2 and RViz layouts to inspect trajectories, diagnostics, and alignment results.
+* **NavSat preprocessing node**: Fuses GNSS odometry with orientation extimate. This is robot specific for the robot mercator of the TU-Graz
 
-### Launch and scripting support
+### Launch Files
+There are currently still some robot specific launch files
 
 ### Localization monitor overview
-
+The localization monitor node implements the consistency evaluation of two odometry data as described in in the paper "A Trajectory Consistency Metric for GNSS Anomaly Detection with LiDAR Odometry" ( https://doi.org/10.34749/3061-0710.2025.25).
 The localization monitor subscribes to a locally integrated odometry stream (for example,
 `/odometry/local`) and a globally referenced solution (GNSS, motion capture, etc.). It synchronizes
-their pose histories, performs a point-to-point alignment, and periodically computes relative pose
+their pose histories, performs a point-to-point alignment, and on movment or periodically (parameter: `time_based` defaults to ``false``) computes relative pose
 error statistics. The node publishes the aligned trajectories on the `Global_Path` and
 `Local_Path` topics so they can be inspected in RViz alongside the diagnostic messages.
+
 
 The `RPE_Values` topic carries a `std_msgs/msg/Float32MultiArray` with four entries that summarize
 the latest comparison window:
@@ -81,42 +79,4 @@ ros2 launch ais_robot_localization localization_monitor_node.launch.py \
 Each argument remaps the parameters on the `localization_monitor_node` so you can point the
 diagnostics at custom odometry sources while keeping the rest of the pipeline disabled.
 
-### Alignment filter 2D projection mode
-
-The alignment filter exposes a `2D_mode` parameter that projects the estimated global transform,
-aligned odometry, and transformed local trajectory onto the XY plane. When enabled, all published
-poses use zero altitude and yaw-only orientation (roll and pitch are forced to zero). The parameter
-defaults to `false` to preserve the original 3D behavior.
-
-To enable the mode when using the bundled pipeline or launch files, override the alignment filter
-parameters, for example:
-
-```bash
-ros2 launch ais_robot_localization localization_monitor.launch.py use_alignment_filter:=true \
-  alignment_filter_params:=/path/to/custom_alignment_filter.yaml
-```
-
-With a custom parameter file containing:
-
-```yaml
-alignment_filter:
-  ros__parameters:
-    2D_mode: true
-```
-
-Alternatively, you can set the parameter directly when launching the standalone alignment filter:
-
-```bash
-ros2 launch ais_robot_localization alignment_filter.launch.py alignment_filter.2D_mode:=true
-```
-
-Both approaches will make the alignment filter publish planar transforms while the rest of the
-pipeline remains unchanged.
-
-
-- `py_tools/TrajectoryTools` contains the AIS trajectory generator, player, and helper notebooks.
-  The `TrajectoryPlayer.py` script now uses ROS 2 (`rclpy`) publishers and TF broadcasters so you can
-  replay dill-based paths directly into Humble environments while visualizing them with the bundled
-  Matplotlib UI.
-
-
+#### Alignment Filter
