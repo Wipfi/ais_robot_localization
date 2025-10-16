@@ -45,6 +45,7 @@ public:
 private:
   std::size_t cleanup();
   static double percentile(const std::vector<double> & values, double percent);
+  void alignGlobalYawWithLocal(const std::vector<Eigen::Isometry3d> & local_for_alignment);
 
   double max_window_length_;
   std::vector<Eigen::Isometry3d> global_poses_;
