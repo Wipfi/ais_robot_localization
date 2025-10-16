@@ -16,7 +16,8 @@ constexpr double kDefaultWindowLength = 150.0;
 AlignmentFilter::AlignmentFilter()
 : max_window_length_(kDefaultWindowLength),
   current_transform_(Eigen::Isometry3d::Identity()),
-  used_length_(0.0)
+  used_length_(0.0),
+  ignore_global_yaw_(false)
 {
 }
 
@@ -63,6 +64,18 @@ bool AlignmentFilter::computeAlignment(AlignmentResult & result)
   }
 
   std::vector<Eigen::Isometry3d> local_for_alignment = local_poses_;
+  if (ignore_global_yaw_) {
+    const std::size_t count = std::min(global_poses_.size(), local_for_alignment.size());
+    for (std::size_t i = 0; i < count; ++i) {
+      const Eigen::Matrix3d & global_rotation = global_poses_[i].linear();
+      const Eigen::Matrix3d & local_rotation = local_for_alignment[i].linear();
+      const double global_yaw = std::atan2(global_rotation(1, 0), global_rotation(0, 0));
+      const double local_yaw = std::atan2(local_rotation(1, 0), local_rotation(0, 0));
+      const double yaw_delta = local_yaw - global_yaw;
+      Eigen::Matrix3d yaw_alignment = Eigen::AngleAxisd(yaw_delta, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+      global_poses_[i].linear() = yaw_alignment * global_poses_[i].linear();
+    }
+  }
   std::vector<double> weights = gaussianWeights(translational_errors_, percentile(translational_errors_, 25.0));
   const std::vector<double> * weights_ptr = nullptr;
   if (weights.size() == local_for_alignment.size()) {
