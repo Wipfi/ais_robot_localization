@@ -46,23 +46,18 @@ the latest comparison window:
 4. Maximum rotational error in radians computed with the same newest-pose reference so the
    bound reflects the worst current deviation instead of historical outliers.
 
-Values are set to `inf` when insufficient data is available (e.g., during startup) so downstream
-consumers can detect gaps.
+Values are set to `inf` when insufficient data is available (e.g., during startup).
 
-- `localization_monitor.launch.py` starts the full AIS monitoring pipeline and exposes launch
-  arguments to toggle the navsat preprocessing, alignment filter, navsat transform stages, or RViz
-  as well as to remap the involved topics.
-- `localization_monitor_node.launch.py`, `alignment_filter.launch.py`, and
-  `navsat_preprocessing.launch.py` provide component-level launch files for targeted debugging or
-  integration into larger applications.
-- Parameter presets for each component live in `params/localization_monitor.yaml`,
-  `params/alignment_filter.yaml`, and `params/navsat_preprocessing.yaml` and can be overridden with
-  custom YAML files.
-- `scripts/localization_monitor_pipeline.sh` mirrors the ROS 1 byobu helpers by creating a tmux
-  session that launches the pipeline (with optional arguments) and opens RViz with the
-  `config/MonitorAnalysis.rviz` layout when available. Pass `start_rviz:=false` if you want to skip
-  the visualization window. A focused configuration for alignment debugging lives in
-  `config/AlignmentFilter.rviz`.
+### Parameters
+| **Parameter**         | **Type** | **Default** | **Description**                                                                                                                      |
+| --------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `dist_cum_threshold`  | `double` | `15.0`      | Maximum cumulative trajectory length (in meters) considered for analysis. Older poses are discarded once this threshold is exceeded. |
+| `time_based`          | `bool`   | `false`     | If `true`, pose cleanup is based on timestamp differences instead of cumulative distance.                                            |
+| `publish_rate`        | `double` | `0.5`       | Used if timebased is set to true: Frequency (in Hz) at which monitoring results are published.                                                                         |
+| `max_poses_threshold` | `int`    | `500`       | Maximum number of stored poses before old entries are removed. This prevents memory overflow in long sessions.                       |
+| `global_frame`        | `string` | `map`       | The global reference frame used for absolute localization (e.g., GNSS or map frame).                                                 |
+| `local_frame`         | `string` | `odom`      | The local reference frame used for relative motion estimation (e.g., LiDAR odometry).                                                |
+
 
 #### Example: `localization_monitor_node.launch.py`
 
