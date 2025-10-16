@@ -62,6 +62,19 @@ void projectTrajectoryToXYPlane(std::vector<Eigen::Isometry3d> & trajectory)
   }
 }
 
+void applyOrientations(nav_msgs::msg::Path & path, const std::vector<Eigen::Isometry3d> & poses)
+{
+  const std::size_t count = std::min(path.poses.size(), poses.size());
+  for (std::size_t i = 0; i < count; ++i) {
+    Eigen::Quaterniond orientation(poses[i].linear());
+    orientation.normalize();
+    path.poses[i].pose.orientation.x = orientation.x();
+    path.poses[i].pose.orientation.y = orientation.y();
+    path.poses[i].pose.orientation.z = orientation.z();
+    path.poses[i].pose.orientation.w = orientation.w();
+  }
+}
+
 Eigen::Isometry3d poseMsgToIsometry(const geometry_msgs::msg::Pose & pose_msg)
 {
   Eigen::Vector3d position(pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
@@ -116,10 +129,13 @@ public:
   : rclcpp::Node("alignment_filter_node"),
     publish_tf_(this->declare_parameter("publish_tf", true)),
     two_d_mode_(this->declare_parameter("2D_mode", false)),
+    ignore_global_yaw_(this->declare_parameter("ignore_global_yaw", false)),
     current_transform_(Eigen::Isometry3d::Identity())
   {
     global_frame_ = this->declare_parameter<std::string>("global_frame", "map");
     local_frame_ = this->declare_parameter<std::string>("local_frame", "odom");
+
+    filter_.setIgnoreGlobalYaw(ignore_global_yaw_);
 
     global_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("alignment_global_path", 10);
     local_path_transformed_pub_ =
@@ -192,6 +208,9 @@ private:
           projectTrajectoryToXYPlane(result.transformed_local);
         }
         current_transform_ = transform_to_use;
+        if (ignore_global_yaw_) {
+          applyOrientations(global_path_, filter_.globalPoses());
+        }
         updateTransformedPath(result.transformed_local, filter_.timestamps(), msg->pose_global.header);
         publishPaths();
       }
@@ -287,6 +306,7 @@ private:
 
   bool publish_tf_;
   bool two_d_mode_;
+  bool ignore_global_yaw_;
 
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr local_path_transformed_pub_;

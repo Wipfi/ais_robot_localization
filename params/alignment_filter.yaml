@@ -4,3 +4,4 @@ alignment_filter:
     global_frame: map
     local_frame: odom
     2D_mode: false
+    ignore_global_yaw: false

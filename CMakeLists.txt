@@ -407,6 +407,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/navsat_preprocessing_node.py
+  scripts/navsat_preprocessing_node_ublox_livox.py
   scripts/localization_monitor_pipeline.sh
   DESTINATION lib/${PROJECT_NAME}
 )

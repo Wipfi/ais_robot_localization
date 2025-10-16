@@ -21,6 +21,8 @@ public:
   AlignmentFilter();
 
   void setMaxWindowLength(double length);
+  void setIgnoreGlobalYaw(bool ignore) {ignore_global_yaw_ = ignore;}
+  bool ignoreGlobalYaw() const {return ignore_global_yaw_;}
 
   std::size_t addMeasurement(
     const Eigen::Isometry3d & global_pose,
@@ -43,6 +45,7 @@ public:
 private:
   std::size_t cleanup();
   static double percentile(const std::vector<double> & values, double percent);
+  void alignGlobalYawWithLocal(const std::vector<Eigen::Isometry3d> & local_for_alignment);
 
   double max_window_length_;
   std::vector<Eigen::Isometry3d> global_poses_;
@@ -53,6 +56,7 @@ private:
 
   Eigen::Isometry3d current_transform_;
   double used_length_;
+  bool ignore_global_yaw_;
 };
 
 }  // namespace ais_robot_localization

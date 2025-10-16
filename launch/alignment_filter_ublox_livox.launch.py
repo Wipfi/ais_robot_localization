@@ -22,7 +22,7 @@ def generate_launch_description() -> LaunchDescription:
     scaled_gps_topic = LaunchConfiguration('scaled_gps_topic')
 
     navsat_pre_input_topic = LaunchConfiguration('navsat_input_topic')
-    navsat_heading_topic = LaunchConfiguration('navsat_heading_topic')
+    navsat_orientation_topic = LaunchConfiguration('navsat_orientation_topic')
     navsat_output_topic = LaunchConfiguration('navsat_output_topic')
     navsat_imu_topic = LaunchConfiguration('navsat_imu_topic')
     navsat_fix_topic = LaunchConfiguration('navsat_fix_topic')
@@ -60,9 +60,9 @@ def generate_launch_description() -> LaunchDescription:
         default_value=PathJoinSubstitution([
             FindPackageShare('ais_robot_localization'),
             'params',
-            'navsat_preprocessing.yaml',
+            'navsat_preprocessing_ublox_livox.yaml',
         ]),
-        description='Parameter file for the navsat preprocessing node.')
+        description='Parameter file for the u-blox/Livox navsat preprocessing node.')
     declare_navsat_transform_params = DeclareLaunchArgument(
         'navsat_transform_params',
         default_value=PathJoinSubstitution([
@@ -105,10 +105,10 @@ def generate_launch_description() -> LaunchDescription:
         'navsat_input_topic',
         default_value='localization/navsat/odometry/gps',
         description='Input odometry topic for navsat preprocessing and transform nodes.')
-    declare_navsat_heading = DeclareLaunchArgument(
-        'navsat_heading_topic',
-        default_value='navsat/orientation',
-        description='Heading topic for the navsat preprocessing node.')
+    declare_navsat_orientation = DeclareLaunchArgument(
+        'navsat_orientation_topic',
+        default_value='/livox/imu',
+        description='External orientation topic for the Livox IMU input.')
     declare_navsat_output = DeclareLaunchArgument(
         'navsat_output_topic',
         default_value='localization/preprocessing/global_odom_fix_cov',
@@ -119,7 +119,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Output IMU topic containing the corrected orientation.')
     declare_navsat_fix = DeclareLaunchArgument(
         'navsat_fix_topic',
-        default_value='navsat/fix',
+        default_value='/ublox/fix',
         description='Raw NavSatFix topic for the navsat transform node.')
 
     declare_alignment_odom = DeclareLaunchArgument(
@@ -174,7 +174,7 @@ def generate_launch_description() -> LaunchDescription:
         executable='alignment_filter_node',
         name='alignment_filter',
         output='screen',
-        parameters=[alignment_params, {'use_sim_time': use_sim_time}],
+        parameters=[alignment_params, {'use_sim_time': use_sim_time}, {'ignore_global_yaw': True}],
         remappings=[
             ('local_odom', local_odom_topic),
             ('localization_result', monitor_result_topic),
@@ -187,16 +187,13 @@ def generate_launch_description() -> LaunchDescription:
 
     navsat_preprocessing = Node(
         package='ais_robot_localization',
-        executable='navsat_preprocessing_node.py',
-        name='navsat_preprocessing',
+        executable='navsat_preprocessing_node_ublox_livox.py',
+        name='navsat_preprocessing_ublox_livox',
         output='screen',
         parameters=[navsat_params, {'use_sim_time': use_sim_time}],
         remappings=[
             ('localization/preprocessing/input/gps_odometry', navsat_pre_input_topic),
-            (
-                'localization/preprocessing/input/orientation_with_global_heading',
-                navsat_heading_topic,
-            ),
+            ('localization/preprocessing/input/imu', navsat_orientation_topic),
             ('localization/preprocessing/output/odometry', navsat_output_topic),
             ('localization/preprocessing/output/imu_with_fix_cov', navsat_imu_topic),
         ],
@@ -208,7 +205,13 @@ def generate_launch_description() -> LaunchDescription:
         executable='navsat_transform_node',
         name='navsat_transform_node',
         output='screen',
-        parameters=[navsat_transform_params, {'use_sim_time': use_sim_time}, {'use_odometry_yaw' : True}, {'publish_filtered_gps': True}, {'broadcast_cartesian_transform': True}],
+        parameters=[
+            navsat_transform_params,
+            {'use_sim_time': use_sim_time},
+            {'use_odometry_yaw': True},
+            {'publish_filtered_gps': True},
+            {'broadcast_cartesian_transform': True},
+        ],
         remappings=[
             ('odometry/filtered', alignment_odom_topic),
             ('gps/fix', navsat_fix_topic),
@@ -233,7 +236,7 @@ def generate_launch_description() -> LaunchDescription:
         declare_monitor_local_path,
         declare_scaled_gps,
         declare_navsat_input,
-        declare_navsat_heading,
+        declare_navsat_orientation,
         declare_navsat_output,
         declare_navsat_imu,
         declare_navsat_fix,
