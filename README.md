@@ -71,12 +71,13 @@ dedicated launch file and supply the odometry topics expected by your system:
 
 ```bash
 ros2 launch ais_robot_localization localization_monitor_node.launch.py \
-  localization_monitor.global_odom_topic:=/my/global/odometry \
-  localization_monitor.local_odom_topic:=/my/local/odometry \
-  localization_monitor.rpe_topic:=/localization_monitor/RPE_Values
+  global_odom_topic:=/my/global/odometry \
+  local_odom_topic:=/my/local/odometry \
+  rpe_topic:=/localization_monitor/RPE_Values
 ```
 
 Each argument remaps the parameters on the `localization_monitor_node` so you can point the
 diagnostics at custom odometry sources while keeping the rest of the pipeline disabled.
 
 #### Alignment Filter
+ToDo
