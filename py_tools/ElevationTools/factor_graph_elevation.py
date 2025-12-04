@@ -7,6 +7,23 @@ from typing import List, Tuple
 
 import numpy as np
 
+try:
+    import jax.numpy as jnp
+
+    JAX_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency
+    jnp = None
+    JAX_AVAILABLE = False
+
+
+def _solve_linear(ATA: np.ndarray, ATb: np.ndarray) -> np.ndarray:
+    if JAX_AVAILABLE:
+        ATA_j = jnp.asarray(ATA)
+        ATb_j = jnp.asarray(ATb)
+        sol = jnp.linalg.solve(ATA_j, ATb_j)
+        return np.asarray(sol)
+    return np.linalg.solve(ATA, ATb)
+
 
 @dataclass
 class RollingElevationGrid:
@@ -208,5 +225,5 @@ class LinearElevationFactorGraph:
 
         ATA[idx_range, idx_range] += 1e-6
 
-        x = np.linalg.solve(ATA, ATb)
+        x = _solve_linear(ATA, ATb)
         return x.reshape(H_init.shape)
