@@ -64,9 +64,6 @@ bool AlignmentFilter::computeAlignment(AlignmentResult & result)
   }
 
   std::vector<Eigen::Isometry3d> local_for_alignment = local_poses_;
-  if (ignore_global_yaw_) {
-    alignGlobalYawWithLocal(local_for_alignment);
-  }
   std::vector<double> weights = gaussianWeights(translational_errors_, percentile(translational_errors_, 25.0));
   const std::vector<double> * weights_ptr = nullptr;
   if (weights.size() == local_for_alignment.size()) {
@@ -128,21 +125,4 @@ double AlignmentFilter::percentile(const std::vector<double> & values, double pe
   return lower_value + (upper_value - lower_value) * fraction;
 }
 
-void AlignmentFilter::alignGlobalYawWithLocal(const std::vector<Eigen::Isometry3d> & local_for_alignment)
-{
-  const std::size_t count = std::min(global_poses_.size(), local_for_alignment.size());
-  const Eigen::Matrix3d last_transform_rotation = current_transform_.linear();
-  for (std::size_t i = 0; i < count; ++i) {
-    const Eigen::Matrix3d global_rotation = global_poses_[i].linear();
-    const Eigen::Matrix3d local_rotation_in_global =
-      last_transform_rotation * local_for_alignment[i].linear();
-    const double global_yaw = std::atan2(global_rotation(1, 0), global_rotation(0, 0));
-    const double local_yaw = std::atan2(local_rotation_in_global(1, 0), local_rotation_in_global(0, 0));
-    const double yaw_delta = local_yaw - global_yaw;
-    const Eigen::Matrix3d yaw_alignment = Eigen::AngleAxisd(yaw_delta, Eigen::Vector3d::UnitZ()).toRotationMatrix();
-    global_poses_[i].linear() = yaw_alignment * global_poses_[i].linear();
-  }
-}
-
 }  // namespace ais_robot_localization
-

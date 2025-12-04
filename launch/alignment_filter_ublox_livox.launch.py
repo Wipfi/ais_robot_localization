@@ -119,7 +119,7 @@ def generate_launch_description() -> LaunchDescription:
         description='Output IMU topic containing the corrected orientation.')
     declare_navsat_fix = DeclareLaunchArgument(
         'navsat_fix_topic',
-        default_value='/ublox/fix',
+        default_value='/navilock/fix',
         description='Raw NavSatFix topic for the navsat transform node.')
 
     declare_alignment_odom = DeclareLaunchArgument(
@@ -168,6 +168,7 @@ def generate_launch_description() -> LaunchDescription:
             ('gnss_with_scaled_covariance', scaled_gps_topic),
         ],
     )
+
 
     alignment_filter = Node(
         package='ais_robot_localization',

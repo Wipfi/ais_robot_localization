@@ -126,9 +126,13 @@ class AlignmentFilterNode : public rclcpp::Node
 {
 public:
   AlignmentFilterNode()
-  : rclcpp::Node("alignment_filter_node"),
+  : rclcpp::Node(
+      "alignment_filter_node",
+      rclcpp::NodeOptions()
+        .start_parameter_services(true)
+        .start_parameter_event_publisher(true)), 
     publish_tf_(this->declare_parameter("publish_tf", true)),
-    two_d_mode_(this->declare_parameter("2D_mode", false)),
+    two_d_mode_(this->declare_parameter("two_d_mode", false)),
     ignore_global_yaw_(this->declare_parameter("ignore_global_yaw", false)),
     current_transform_(Eigen::Isometry3d::Identity())
   {
@@ -209,7 +213,7 @@ private:
         }
         current_transform_ = transform_to_use;
         if (ignore_global_yaw_) {
-          applyOrientations(global_path_, filter_.globalPoses());
+          applyOrientations(global_path_, result.transformed_local);
         }
         updateTransformedPath(result.transformed_local, filter_.timestamps(), msg->pose_global.header);
         publishPaths();
@@ -343,4 +347,3 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
   return 0;
 }
-

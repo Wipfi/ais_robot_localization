@@ -1,7 +1,6 @@
 ais_robot_localization
 ======================
-
-ais_robot_localization is a package of nonlinear state estimation nodes. The package was developed by Charles River Analytics, Inc.
+This is a fork of the original robot_localization package adding some 
 
 Please see documentation here: http://wiki.ros.org/robot_localization
 
