@@ -218,7 +218,7 @@ def setup_trajectory_3d_plot(ax, autoscale = False):
     ax.set_xlim(-10, 200)
     ax.set_ylim(-10, 200)
     ax.set_zlim(-10, 60)
-    ax.set_aspect('equal', adjustable='box')
+    ax.set_aspect('auto', adjustable='box')
 
     if autoscale:
         ax.autoscale()
