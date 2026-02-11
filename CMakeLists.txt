@@ -207,11 +207,8 @@ ament_target_dependencies(
   tf2_ros
 )
 
-rosidl_target_interfaces(localization_monitor_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
-
-rosidl_target_interfaces(alignment_filter_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(localization_monitor_node "${cpp_typesupport_target}")
+target_link_libraries(alignment_filter_node "${cpp_typesupport_target}")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -399,11 +396,18 @@ install(DIRECTORY
   params
   launch
   config
-  py_tools
 
   DESTINATION share/${PROJECT_NAME}
   USE_SOURCE_PERMISSIONS
 )
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/py_tools")
+  install(DIRECTORY
+    py_tools
+    DESTINATION share/${PROJECT_NAME}
+    USE_SOURCE_PERMISSIONS
+  )
+endif()
 
 install(PROGRAMS
   scripts/navsat_preprocessing_node.py
