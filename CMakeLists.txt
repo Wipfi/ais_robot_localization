@@ -37,6 +37,20 @@ find_package(tf2_ros REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
+# yaml-cpp target names differ between package variants/environments.
+set(YAML_CPP_LINK_TARGET "")
+if(TARGET yaml-cpp::yaml-cpp)
+  set(YAML_CPP_LINK_TARGET yaml-cpp::yaml-cpp)
+elseif(TARGET yaml-cpp)
+  set(YAML_CPP_LINK_TARGET yaml-cpp)
+elseif(DEFINED YAML_CPP_LIBRARIES AND NOT "${YAML_CPP_LIBRARIES}" STREQUAL "")
+  set(YAML_CPP_LINK_TARGET ${YAML_CPP_LIBRARIES})
+else()
+  message(FATAL_ERROR
+    "yaml-cpp was found but no usable CMake target/library was exported. "
+    "Checked: yaml-cpp::yaml-cpp, yaml-cpp, YAML_CPP_LIBRARIES.")
+endif()
+
 # Geographiclib installs FindGeographicLib.cmake to this non-standard location
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
 find_package(GeographicLib REQUIRED)
@@ -98,7 +112,7 @@ target_link_libraries(${library_name} PUBLIC
 )
 target_link_libraries(${library_name} PRIVATE
   ${GeographicLib_LIBRARIES}
-  yaml-cpp::yaml-cpp
+  ${YAML_CPP_LINK_TARGET}
 )
 
 add_executable(
